@@ -15,8 +15,6 @@
 *.dmg
 *.gz
 *.iso
-out/*.jar
-build/*.jar
 *.rar
 *.tar
 *.zip
@@ -64,3 +62,6 @@ atlassian-ide-plugin.xml
 
 # NetBeans specific files/directories
 .nbattrs
+
+# convenience config file
+config.json

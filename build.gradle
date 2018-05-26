@@ -23,6 +23,7 @@ mainClassName = 'me.shawnrc.kemohno.KemohnoKt'
 
 repositories {
   mavenCentral()
+  jcenter()
   maven { url "https://jitpack.io" }
 }
 
@@ -32,9 +33,10 @@ sourceSets {
 }
 
 dependencies {
-  compile "com.sparkjava:spark-core:2.7.2"
-  compile "com.sparkjava:spark-kotlin:1.0.0-alpha"
-  compile "org.slf4j:slf4j-simple:1.7.21"
+  compile 'com.sparkjava:spark-kotlin:1.0.0-alpha'
+  compile 'org.slf4j:slf4j-simple:1.7.21'
+  compile 'khttp:khttp:0.1.0'
+  implementation 'com.beust:klaxon:3.0.1'
 }
 
 task stage {
