@@ -13,7 +13,8 @@ fun main(args: Array<String>) {
     }
 
     post("/bepis") {
-      val userId = request.params("user_id")
+      val userId = request.queryParams("user_id")
+      response.type("application/json")
       mapOf(
           "response_type" to "in_channel",
           "text" to "wnelo",
