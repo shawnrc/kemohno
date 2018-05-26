@@ -22,7 +22,12 @@ fun main(args: Array<String>) {
 
     post("/bepis") {
       val userId = request.queryParams("user_id")
-      LOG.info(request.queryMap().toString())
+      val ass = request.queryParams()
+      val bungus = StringBuilder()
+      for (cock in ass) {
+        bungus.append("$cock: ${request.queryParams(cock)}")
+      }
+      LOG.info(bungus.toString())
       val user = SlackClient.getUser(userId, config.oauthToken)
       response.type("application/json")
       json {
