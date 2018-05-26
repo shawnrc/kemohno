@@ -22,10 +22,10 @@ fun main(args: Array<String>) {
 
     post("/bepis") {
       val userId = request.queryParams("user_id")
+      LOG.info(request.body())
       val user = SlackClient.getUser(userId, config.oauthToken)
       response.type("application/json")
-      println(request.body())
-      val payload = json {
+      json {
         obj(
             "text" to "wnelo",
             "as_user" to true,
@@ -33,8 +33,6 @@ fun main(args: Array<String>) {
             "username" to user.realName,
             "response_type" to "in_channel")
       }.toJsonString()
-      System.err.println(payload)
-      payload
     }
   }
 }
