@@ -1,0 +1,36 @@
+buildscript {
+  ext.kotlin_version = '1.2.41'
+
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+  }
+}
+
+plugins {
+  id 'org.jetbrains.kotlin.jvm' version '1.2.41'
+  id 'java'
+//  id 'jetty'
+}
+
+group = 'me.shawnrc'
+version = '0.0.1'
+sourceCompatibility = 1.8
+
+repositories {
+  mavenCentral()
+}
+
+sourceSets {
+  main.kotlin.srcDirs += 'src/main/kotlin'
+  test.kotlin.srcDirs += 'src/test/kotlin'
+}
+
+dependencies {
+  compile "com.sparkjava:spark-core:2.7.2"
+  compile "com.sparkjava:spark-kotlin:1.0.0-alpha"
+  compile "org.slf4j:slf4j-simple:1.7.21"
+}
