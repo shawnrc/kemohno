@@ -21,6 +21,21 @@ object SlackClient {
     return User(realName, imageUrl)
   }
 
+  fun sendMessage(
+      text: String,
+      channel: String,
+      user: User,
+      oauthToken: String) {
+    val responseBlob = request("post", "https://slack.com/api/chat.postMessage", mapOf(
+        "text" to text,
+        "channel" to channel,
+        "icon_url" to user.imageUrl,
+        "username" to user.realName,
+        "response_type" to "in_channel",
+        "token" to oauthToken
+    ))
+  }
+
   private fun request(
       verb: String,
       url: String,

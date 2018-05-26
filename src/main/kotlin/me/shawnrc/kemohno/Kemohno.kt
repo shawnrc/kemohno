@@ -1,7 +1,6 @@
 package me.shawnrc.kemohno
 
 import com.beust.klaxon.Klaxon
-import com.beust.klaxon.json
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import spark.kotlin.ignite
@@ -23,14 +22,14 @@ fun main(args: Array<String>) {
     post("/bepis") {
       val userId = request.queryParams("user_id")
       val user = SlackClient.getUser(userId, config.oauthToken)
+      SlackClient.sendMessage(
+          text = "boopity zoop",
+          channel = request.queryParams("channel_id"),
+          user = user,
+          oauthToken = config.oauthToken)
+
       response.type("application/json")
-      json {
-        obj(
-            "text" to "wnelo",
-            "icon_url" to user.imageUrl,
-            "username" to user.realName,
-            "response_type" to "in_channel")
-      }.toJsonString()
+      ""
     }
   }
 }
