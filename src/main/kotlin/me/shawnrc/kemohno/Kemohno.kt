@@ -3,6 +3,7 @@ package me.shawnrc.kemohno
 import com.beust.klaxon.Klaxon
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import spark.Request
 import spark.kotlin.ignite
 import java.io.File
 
@@ -19,7 +20,18 @@ fun main(args: Array<String>) {
       "hello"
     }
 
+    fun dumpQueryParams(request: Request): String {
+      return buildString {
+        append("{\n")
+        for (key in request.queryParams()) {
+          append("    \"key\": \"${request.queryParams(key)}\",\n")
+        }
+        append('}')
+      }.replace(",\n}","\n}")
+    }
+
     post("/bepis") {
+      System.err.println(dumpQueryParams(request))
       val userId = request.queryParams("user_id")
       val user = SlackClient.getUser(userId, config.oauthToken)
       SlackClient.sendMessage(
