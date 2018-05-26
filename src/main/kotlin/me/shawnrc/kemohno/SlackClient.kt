@@ -28,6 +28,7 @@ object SlackClient {
       oauthToken: String) {
     request("post", "https://slack.com/api/chat.postMessage", mapOf(
         "text" to text,
+        "as_user" to "false",
         "channel" to channel,
         "icon_url" to user.imageUrl,
         "username" to user.realName,

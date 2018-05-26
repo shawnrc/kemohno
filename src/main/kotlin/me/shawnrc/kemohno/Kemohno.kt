@@ -24,7 +24,7 @@ fun main(args: Array<String>) {
       return buildString {
         append("{\n")
         for (key in request.queryParams()) {
-          append("    \"key\": \"${request.queryParams(key)}\",\n")
+          append("    \"$key\": \"${request.queryParams(key)}\",\n")
         }
         append('}')
       }.replace(",\n}","\n}")
@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
       val userId = request.queryParams("user_id")
       val user = SlackClient.getUser(userId, config.oauthToken)
       SlackClient.sendMessage(
-          text = "boopity zoop",
+          text = request.,
           channel = request.queryParams("channel_id"),
           user = user,
           oauthToken = config.oauthToken)
