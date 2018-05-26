@@ -4,6 +4,7 @@ import spark.kotlin.ignite
 import spark.kotlin.port
 
 fun main(args: Array<String>) {
+  println("PORT: ${System.getenv("PORT")}")
   val config = getConfig()
   port(config.port)
   val http = ignite()
@@ -17,8 +18,9 @@ fun main(args: Array<String>) {
 }
 
 fun getConfig(): Config {
-  val port = (System.getenv("PORT") ?: "4567").toInt()
-  return Config(port=port)
+  return Config(
+      port=(System.getenv("PORT") ?: "4567").toInt()
+  )
 }
 
 data class Config(val port: Int)
