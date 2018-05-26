@@ -22,7 +22,7 @@ fun main(args: Array<String>) {
 
     post("/bepis") {
       val userId = request.queryParams("user_id")
-      LOG.info(request.params().toString())
+      LOG.info(request.queryParams().toString())
       val user = SlackClient.getUser(userId, config.oauthToken)
       response.type("application/json")
       json {
