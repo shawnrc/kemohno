@@ -26,8 +26,8 @@ object SlackClient {
       url: String,
       params: Map<String, String>): JSONObject {
     val response = when (verb) {
-      "get" -> khttp.get(url, params)
-      "post" -> khttp.post(url, params)
+      "get" -> khttp.get(url, params = params)
+      "post" -> khttp.post(url, params = params)
       else -> throw Exception("unsupported verb $verb")
     }
     val responseBlob = response.jsonObject
