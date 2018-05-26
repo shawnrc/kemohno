@@ -1,13 +1,11 @@
 package me.shawnrc.kemohno
 
 import spark.kotlin.ignite
-import spark.kotlin.port
 
 fun main(args: Array<String>) {
-  println("PORT: ${System.getenv("PORT")}")
   val config = getConfig()
-  port(config.port)
   val http = ignite()
+  http.port(config.port)
 
   http.get("lad") {
     "bungus\n"
