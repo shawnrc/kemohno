@@ -26,11 +26,11 @@ fun main(args: Array<String>) {
       response.type("application/json")
       json {
         obj(
-            "response_type" to "in_channel",
             "text" to "wnelo",
             "as_user" to true,
+            "icon_url" to user.imageUrl,
             "username" to user.realName,
-            "icon_url" to user.imageUrl)
+            "response_type" to "in_channel")
       }.toJsonString()
     }
   }
@@ -52,7 +52,7 @@ fun getConfig(): Config {
   val handle = File(CONFIG_PATH)
   return if (handle.exists()) {
     LOG.info("using config file")
-    JSON.parse<Config>(handle) ?: throw Exception("config file existed, but failed to parse :/")
+    JSON.parse<Config>(handle) ?: throw Exception("config file existed, but failed to 🅱️arse :/")
   } else Config(
       appId = getEnv("APP_ID"),
       clientId = getEnv("CLIENT_ID"),

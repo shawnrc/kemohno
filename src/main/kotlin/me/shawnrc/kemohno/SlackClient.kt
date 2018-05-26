@@ -1,12 +1,23 @@
 package me.shawnrc.kemohno
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 object SlackClient {
+  val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
+
   fun getUser(userId: String, oauthToken: String): User {
-    val userBlob = khttp.get(
+    val responseBlob = khttp.get(
         url = "https://slack.com/api/users.info",
         params = mapOf("token" to oauthToken, "user" to userId)).jsonObject
-    val realName = userBlob.getString("real_name")
-    val imageUrl = userBlob.getJSONObject("profile")
+    if (!responseBlob.getBoolean("ok")) {
+      LOG.error("call to userinfo endpoint failed, dumping")
+      LOG.error(responseBlob["error"].toString())
+      throw Exception("bad call to userinfo")
+    }
+
+    val realName = responseBlob.getString("real_name")
+    val imageUrl = responseBlob.getJSONObject("profile")
         .getString("image_512")
     return User(realName, imageUrl)
   }
