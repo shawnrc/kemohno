@@ -1,14 +1,13 @@
 package me.shawnrc.kemohno
 
 import spark.kotlin.ignite
-import java.awt.SystemColor.text
 
 fun main(args: Array<String>) {
   val config = getConfig()
   ignite().apply {
     port(config.port)
 
-    get("hello") {
+    get("/hello") {
       "hello"
     }
 
@@ -19,7 +18,7 @@ fun main(args: Array<String>) {
           "response_type" to "in_channel",
           "text" to "wnelo",
           "as_user" to userId
-      )
+      ).toJson()
     }
   }
 }
@@ -31,3 +30,13 @@ fun getConfig(): Config {
 }
 
 data class Config(val port: Int)
+
+fun Map<String, String>.toJson(): String {
+  return buildString {
+    append('{')
+    for ((key, value) in this@toJson) {
+      append("\"$key\": \"$value\",")
+    }
+    append('}')
+  }.replace(",}", "}")
+}
