@@ -4,7 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 object SlackClient {
-  val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
+  private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
   fun getUser(userId: String, oauthToken: String): User {
     val responseBlob = khttp.get(
@@ -16,8 +16,9 @@ object SlackClient {
       throw Exception("bad call to userinfo")
     }
 
-    val realName = responseBlob.getString("real_name")
-    val imageUrl = responseBlob.getJSONObject("profile")
+    val userBlob = responseBlob.getJSONObject("user")
+    val realName = userBlob.getString("real_name")
+    val imageUrl = userBlob.getJSONObject("profile")
         .getString("image_512")
     return User(realName, imageUrl)
   }
