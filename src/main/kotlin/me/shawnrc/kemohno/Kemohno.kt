@@ -24,7 +24,7 @@ fun main(args: Array<String>) {
       val userId = request.queryParams("user_id")
       val user = SlackClient.getUser(userId, config.oauthToken)
       response.type("application/json")
-      json {
+      val payload = json {
         obj(
             "text" to "wnelo",
             "as_user" to true,
@@ -32,6 +32,8 @@ fun main(args: Array<String>) {
             "username" to user.realName,
             "response_type" to "in_channel")
       }.toJsonString()
+      System.err.println(payload)
+      payload
     }
   }
 }
