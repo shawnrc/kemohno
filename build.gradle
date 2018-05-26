@@ -13,15 +13,17 @@ buildscript {
 plugins {
   id 'org.jetbrains.kotlin.jvm' version '1.2.41'
   id 'java'
-//  id 'jetty'
+  id 'application'
 }
 
 group = 'me.shawnrc'
 version = '0.0.1'
 sourceCompatibility = 1.8
+mainClassName = 'me.shawnrc.kemohno.KemohnoKt'
 
 repositories {
   mavenCentral()
+  maven { url "https://jitpack.io" }
 }
 
 sourceSets {
@@ -33,4 +35,8 @@ dependencies {
   compile "com.sparkjava:spark-core:2.7.2"
   compile "com.sparkjava:spark-kotlin:1.0.0-alpha"
   compile "org.slf4j:slf4j-simple:1.7.21"
+}
+
+task stage {
+  dependsOn installDist
 }
