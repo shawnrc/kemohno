@@ -19,10 +19,12 @@ fun main(args: Array<String>) {
     port(config.port)
 
     get("/hello") {
+      LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
       "hello"
     }
 
     post("/bepis") {
+      LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
       if (request.queryParams("token") != config.verificationToken) halt(403)
 
       val userId = request.queryParams("user_id")
