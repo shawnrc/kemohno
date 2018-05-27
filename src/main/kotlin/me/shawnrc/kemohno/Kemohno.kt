@@ -34,8 +34,7 @@ fun main(args: Array<String>) {
           user = user,
           oauthToken = config.oauthToken)
 
-      response.type("application/json")
-      ""
+      status(204)
     }
   }
 }
