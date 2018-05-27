@@ -22,9 +22,14 @@ class Emojifier(emojiFile: File) {
       }
       val currentLetter = string[index].toString().toUpperCase()
       val letterPool = emojiMap.array<String>(currentLetter) ?: continue
-      append(letterPool[random.nextInt(letterPool.size)])
+      append(letterPool.random())
 
       ++index
     }
+  }
+
+  private fun <E> List<E>.random(): E {
+    if (this.isEmpty()) throw IndexOutOfBoundsException("random called on empty list")
+    return this[random.nextInt(size)]
   }
 }
