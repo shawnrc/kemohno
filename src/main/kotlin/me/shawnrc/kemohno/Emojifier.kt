@@ -14,7 +14,7 @@ class Emojifier(emojiFile: File) {
     val normalized = string.toUpperCase()
     var index = 0
     while (index < normalized.length) {
-      val skipIndex = index + 2
+      val skipIndex = index + 3
       if (normalized.bemojiAt(index, skipIndex)) {
         append(":b:")
         index = skipIndex
@@ -31,7 +31,7 @@ class Emojifier(emojiFile: File) {
   private fun String.bemojiAt(start: Int, endInclusive: Int): Boolean {
     return this[start] == ':'
         && endInclusive < length
-        && substring(start..endInclusive) == ":B:"
+        && substring(start until endInclusive) == ":B:"
   }
 
   private fun <E> List<E>.randomItem(): E {
