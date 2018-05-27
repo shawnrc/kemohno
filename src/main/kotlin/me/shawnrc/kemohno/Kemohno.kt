@@ -3,16 +3,18 @@ package me.shawnrc.kemohno
 import com.beust.klaxon.Klaxon
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import spark.Request
 import spark.kotlin.ignite
 import java.io.File
+import java.io.FileNotFoundException
 
 const val CONFIG_PATH = "./config.json"
+const val EMOJI_PATH = "./emoji.json"
 val LOG: Logger = LoggerFactory.getLogger("Kemohno")
 val JSON = Klaxon()
 
 fun main(args: Array<String>) {
   val config = getConfig()
+  val emojifier = getEmojifier()
   ignite().apply {
     port(config.port)
 
@@ -20,22 +22,11 @@ fun main(args: Array<String>) {
       "hello"
     }
 
-    fun dumpQueryParams(request: Request): String {
-      return buildString {
-        append("{\n")
-        for (key in request.queryParams()) {
-          append("    \"$key\": \"${request.queryParams(key)}\",\n")
-        }
-        append('}')
-      }.replace(",\n}","\n}")
-    }
-
     post("/bepis") {
-      System.err.println(dumpQueryParams(request))
       val userId = request.queryParams("user_id")
       val user = SlackClient.getUser(userId, config.oauthToken)
       SlackClient.sendMessage(
-          text = user.realName,
+          text = emojifier.translate(request.queryParams("text")),
           channel = request.queryParams("channel_id"),
           user = user,
           oauthToken = config.oauthToken)
@@ -54,9 +45,8 @@ data class Config(
     val port: Int,
     val verificationToken: String)
 
-fun getEnv(string: String): String {
-  return System.getenv(string) ?: throw Exception("missing env var: $string")
-}
+fun getEnv(string: String): String = System.getenv(string)
+    ?: throw Exception("missing env var: $string")
 
 fun getConfig(): Config {
   val handle = File(CONFIG_PATH)
@@ -70,4 +60,10 @@ fun getConfig(): Config {
       oauthToken = getEnv("SLACK_OAUTH_TOKEN"),
       port = System.getenv("PORT")?.toInt() ?: 4567,
       verificationToken = getEnv("VERIFY_TOKEN"))
+}
+
+fun getEmojifier(): Emojifier {
+  val handle = File(EMOJI_PATH)
+  handle.exists() || throw FileNotFoundException("failed to find emojifile at $EMOJI_PATH")
+  return Emojifier(handle)
 }
