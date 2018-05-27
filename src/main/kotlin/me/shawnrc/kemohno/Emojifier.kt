@@ -15,9 +15,7 @@ class Emojifier(emojiFile: File) {
     var index = 0
     while (index < normalized.length) {
       val skipIndex = index + 2
-      if (normalized[index] == ':'
-          && skipIndex < normalized.length
-          && normalized.substring(index..skipIndex) == ":b:") {
+      if (normalized.bemojiAt(index, skipIndex)) {
         append(":b:")
         index = skipIndex
         continue
@@ -28,6 +26,12 @@ class Emojifier(emojiFile: File) {
 
       ++index
     }
+  }
+
+  private fun String.bemojiAt(start: Int, endInclusive: Int): Boolean {
+    return this[start] == ':'
+        && endInclusive < length
+        && substring(start..endInclusive) == ":B:"
   }
 
   private fun <E> List<E>.random(): E {
