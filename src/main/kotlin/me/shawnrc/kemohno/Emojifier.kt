@@ -28,14 +28,14 @@ class Emojifier(emojiFile: File) {
     }
   }
 
-  private fun String.bemojiAt(start: Int, endInclusive: Int): Boolean {
+  private fun String.bemojiAt(start: Int, end: Int): Boolean {
     return this[start] == ':'
-        && endInclusive < length
-        && substring(start until endInclusive) == ":B:"
+        && end < length
+        && substring(start until end) == ":B:"
   }
 
   private fun <E> List<E>.randomItem(): E {
-    if (this.isEmpty()) throw IndexOutOfBoundsException("randomItem called on empty list")
+    if (isEmpty()) throw IndexOutOfBoundsException("randomItem called on empty list")
     return this[random.nextInt(size)]
   }
 }

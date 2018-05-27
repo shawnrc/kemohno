@@ -48,8 +48,7 @@ data class Config(
     val port: Int,
     val verificationToken: String)
 
-fun getEnv(string: String): String = System.getenv(string)
-    ?: throw Exception("missing env var: $string")
+fun getEnv(string: String): String = System.getenv(string) ?: throw Exception("missing env var: $string")
 
 fun getConfig(): Config {
   val handle = File(CONFIG_PATH)
