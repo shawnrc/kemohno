@@ -16,8 +16,7 @@ object SlackClient {
 
     val userBlob = responseBlob.getJSONObject("user")
     val realName = userBlob.getString("real_name")
-    val imageUrl = userBlob.getJSONObject("profile")
-        .getString("image_512")
+    val imageUrl = userBlob.getJSONObject("profile").getString("image_512")
     return User(realName, imageUrl)
   }
 

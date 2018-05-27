@@ -7,6 +7,7 @@ buildscript {
 
   dependencies {
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
   }
 }
 
@@ -14,6 +15,7 @@ plugins {
   id 'org.jetbrains.kotlin.jvm' version '1.2.41'
   id 'java'
   id 'application'
+  id 'com.github.johnrengelman.shadow' version '2.0.4'
 }
 
 group = 'me.shawnrc'
