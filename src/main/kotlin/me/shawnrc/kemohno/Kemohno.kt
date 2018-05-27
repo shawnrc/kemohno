@@ -15,7 +15,7 @@ val JSON = Klaxon()
 
 fun main(args: Array<String>) {
   val config = getConfig()
-  val emojifier = getEmojifier()
+  val emojifier = if (args.size == 1) getEmojifier(args[0]) else getEmojifier()
   ignite().apply {
     port(config.port)
 
@@ -63,8 +63,8 @@ fun getConfig(): Config {
       verificationToken = getEnv("VERIFY_TOKEN"))
 }
 
-fun getEmojifier(): Emojifier {
-  val handle = File(EMOJI_PATH)
+fun getEmojifier(path: String = EMOJI_PATH): Emojifier {
+  val handle = File(path)
   handle.exists() || throw FileNotFoundException("failed to find emojifile at $EMOJI_PATH")
   return Emojifier(handle)
 }
