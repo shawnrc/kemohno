@@ -1,6 +1,7 @@
 package me.shawnrc.kemohno
 
 import com.beust.klaxon.Klaxon
+import com.beust.klaxon.json
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import spark.kotlin.halt
@@ -9,7 +10,9 @@ import java.io.File
 
 const val CONFIG_PATH = "./config.json"
 const val EMOJI_PATH = "./emoji.json"
-val LOG: Logger = LoggerFactory.getLogger("Kemohno")
+const val APPLICATON_JSON = "application/json"
+
+val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
 val JSON = Klaxon()
 
 fun main(args: Array<String>) {
@@ -26,6 +29,13 @@ fun main(args: Array<String>) {
     post("/bepis") {
       LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
       if (request.queryParams("token") != config.verificationToken) halt(403)
+      if (request.queryParams("text").isEmpty()) {
+        response.type(APPLICATON_JSON)
+        return@post json { obj(
+            "response_type" to "ephemeral",
+            "text" to "I can't emojify an empty string! try again with some characters")
+        }.toJsonString()
+      }
 
       val userId = request.queryParams("user_id")
       val user = SlackClient.getUser(userId, config.oauthToken)
