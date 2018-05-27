@@ -21,8 +21,8 @@ class Emojifier(emojiFile: File) {
         continue
       }
       val currentLetter = normalized[index].toString()
-      val letterPool = emojiMap.array<String>(currentLetter) ?: continue
-      append(letterPool.random())
+      val letterPool = emojiMap.array<String>(currentLetter)
+      append(letterPool?.randomItem() ?: currentLetter)
 
       ++index
     }
@@ -34,8 +34,8 @@ class Emojifier(emojiFile: File) {
         && substring(start..endInclusive) == ":B:"
   }
 
-  private fun <E> List<E>.random(): E {
-    if (this.isEmpty()) throw IndexOutOfBoundsException("random called on empty list")
+  private fun <E> List<E>.randomItem(): E {
+    if (this.isEmpty()) throw IndexOutOfBoundsException("randomItem called on empty list")
     return this[random.nextInt(size)]
   }
 }
