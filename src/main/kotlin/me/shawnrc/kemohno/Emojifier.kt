@@ -13,7 +13,7 @@ class Emojifier(emojiFile: File) {
   fun translate(string: String): String = buildString {
     var index = 0
     while (index < string.length) {
-      val skipIndex = index + 3
+      val skipIndex = index + 2
       if (skipIndex < string.length
           && string.substring(index..skipIndex) == ":b:") {
         append(":b:")
@@ -21,8 +21,7 @@ class Emojifier(emojiFile: File) {
         continue
       }
       val currentLetter = string[index].toString().toUpperCase()
-      val letterPool = emojiMap.array<String>(currentLetter)
-          ?: throw Exception("no letters for letter $currentLetter")
+      val letterPool = emojiMap.array<String>(currentLetter) ?: continue
       append(letterPool[random.nextInt(letterPool.size)])
 
       ++index
