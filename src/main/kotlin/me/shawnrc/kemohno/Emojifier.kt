@@ -11,16 +11,18 @@ class Emojifier(emojiFile: File) {
       emojiFile.bufferedReader(Charset.defaultCharset()))
 
   fun translate(string: String): String = buildString {
+    val normalized = string.toUpperCase()
     var index = 0
-    while (index < string.length) {
+    while (index < normalized.length) {
       val skipIndex = index + 2
-      if (skipIndex < string.length
-          && string.substring(index..skipIndex) == ":b:") {
+      if (normalized[index] == ':'
+          && skipIndex < normalized.length
+          && normalized.substring(index..skipIndex) == ":b:") {
         append(":b:")
         index = skipIndex
         continue
       }
-      val currentLetter = string[index].toString().toUpperCase()
+      val currentLetter = normalized[index].toString()
       val letterPool = emojiMap.array<String>(currentLetter) ?: continue
       append(letterPool.random())
 
