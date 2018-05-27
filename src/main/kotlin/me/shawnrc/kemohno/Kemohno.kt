@@ -15,7 +15,8 @@ val JSON = Klaxon()
 
 fun main(args: Array<String>) {
   val config = getConfig()
-  val emojifier = if (args.size == 1) getEmojifier(args[0]) else getEmojifier()
+  val emojifier = if (args.isNotEmpty()) getEmojifier(args[0]) else getEmojifier()
+  args.forEach(LOG::info)
   ignite().apply {
     port(config.port)
 
