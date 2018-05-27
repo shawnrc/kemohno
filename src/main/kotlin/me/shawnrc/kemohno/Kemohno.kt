@@ -3,6 +3,7 @@ package me.shawnrc.kemohno
 import com.beust.klaxon.Klaxon
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import spark.kotlin.halt
 import spark.kotlin.ignite
 import java.io.File
 import java.io.FileNotFoundException
@@ -23,6 +24,8 @@ fun main(args: Array<String>) {
     }
 
     post("/bepis") {
+      if (request.queryParams("token") != config.verificationToken) halt(403)
+
       val userId = request.queryParams("user_id")
       val user = SlackClient.getUser(userId, config.oauthToken)
       SlackClient.sendMessage(
