@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory
 import spark.kotlin.halt
 import spark.kotlin.ignite
 import java.io.File
-import java.io.FileNotFoundException
 
 const val CONFIG_PATH = "./config.json"
 const val EMOJI_PATH = "./emoji.json"
@@ -15,9 +14,7 @@ val JSON = Klaxon()
 
 fun main(args: Array<String>) {
   val config = getConfig()
-  LOG.info("dumping args")
-  args.forEach(LOG::info)
-  val emojifier = if (args.isNotEmpty()) getEmojifier(args[0]) else getEmojifier()
+  val emojifier = if (args.isNotEmpty()) Emojifier(args[0]) else Emojifier(EMOJI_PATH)
   ignite().apply {
     port(config.port)
 
@@ -63,10 +60,4 @@ fun getConfig(): Config {
       oauthToken = getEnv("SLACK_OAUTH_TOKEN"),
       port = System.getenv("PORT")?.toInt() ?: 4567,
       verificationToken = getEnv("VERIFY_TOKEN"))
-}
-
-fun getEmojifier(path: String = EMOJI_PATH): Emojifier {
-  val handle = File(path)
-  handle.exists() || throw FileNotFoundException("failed to find emojifile at $EMOJI_PATH")
-  return Emojifier(handle)
 }

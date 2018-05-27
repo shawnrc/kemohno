@@ -6,10 +6,10 @@ import java.nio.charset.Charset
 import java.util.*
 import kotlin.math.min
 
-class Emojifier(emojiFile: File) {
+class Emojifier(emojiPath: String) {
   private val random = Random()
   private val emojiMap = Klaxon().parseJsonObject(
-      emojiFile.bufferedReader(Charset.defaultCharset()))
+      File(emojiPath).bufferedReader(Charset.defaultCharset()))
 
   fun translate(string: String): String = buildString {
     val normalized = string.toUpperCase()
