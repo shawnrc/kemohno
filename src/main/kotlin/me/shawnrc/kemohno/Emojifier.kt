@@ -20,6 +20,7 @@ class Emojifier(emojiPath: String) {
       val skipIndex = index + 3
       if (normalized.bemojiAt(index, skipIndex)) {
         append(":b:")
+        index = skipIndex
         continue
       }
       val currentLetter = normalized[index].toString()

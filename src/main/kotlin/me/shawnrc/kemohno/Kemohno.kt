@@ -10,7 +10,7 @@ import java.io.File
 
 const val CONFIG_PATH = "./config.json"
 const val EMOJI_PATH = "./emoji.json"
-const val APPLICATON_JSON = "application/json"
+const val APPLICATION_JSON = "application/json"
 
 val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
 val JSON = Klaxon()
@@ -30,10 +30,11 @@ fun main(args: Array<String>) {
       LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
       if (request.queryParams("token") != config.verificationToken) halt(403)
       if (request.queryParams("text").isEmpty()) {
-        response.type(APPLICATON_JSON)
+        response.type(APPLICATION_JSON)
+        status(400)
         return@post json { obj(
             "response_type" to "ephemeral",
-            "text" to "I can't emojify an empty string! try again with some characters")
+            "text" to "baka! I can't emojify an empty string! try again with some characters.")
         }.toJsonString()
       }
 
@@ -58,7 +59,8 @@ data class Config(
     val port: Int,
     val verificationToken: String)
 
-fun getEnv(string: String): String = System.getenv(string) ?: throw Exception("missing env var: $string")
+fun getEnv(string: String): String =
+    System.getenv(string) ?: throw Exception("missing env var: $string")
 
 fun getConfig(): Config {
   val handle = File(CONFIG_PATH)
