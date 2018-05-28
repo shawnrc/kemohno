@@ -38,7 +38,7 @@ fun main(args: Array<String>) {
       }
 
       val userId = request.queryParams("user_id")
-      val user = SlackClient.getUser(userId, config.oauthToken)
+      val user = SlackClient.getUserData(userId, config.oauthToken)
       SlackClient.sendMessage(
           text = emojifier.translate(request.queryParams("text")),
           channel = request.queryParams("channel_id"),

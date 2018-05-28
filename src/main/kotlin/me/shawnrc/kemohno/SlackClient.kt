@@ -6,17 +6,18 @@ import org.slf4j.LoggerFactory
 import java.io.File
 
 object SlackClient {
+  private const val IMAGE_1024 = "image_1024"
   private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
-  fun getUser(userId: String, oauthToken: String): User {
+  fun getUserData(userId: String, oauthToken: String): User {
     val responseBlob = request(
         verb = "get",
-        url = "https://slack.com/api/users.info",
+        url = "https://slack.com/api/users.profile.get",
         params = mapOf("token" to oauthToken, "user" to userId))
 
-    val userBlob = responseBlob.getJSONObject("user")
-    val realName = userBlob.getString("real_name")
-    val imageUrl = userBlob.getJSONObject("profile").getString("image_512")
+    val profile = responseBlob.getJSONObject("profile")
+    val realName = profile.getString("real_name")
+    val imageUrl = if (profile.has(IMAGE_1024)) profile.getString(IMAGE_1024) else profile.getString("image_512")
     return User(realName, imageUrl)
   }
 
