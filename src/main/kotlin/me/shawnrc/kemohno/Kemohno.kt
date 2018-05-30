@@ -66,10 +66,8 @@ fun main(args: Array<String>) {
       }
 
       val channel = payload.obj("channel")?.string("id")
-      val message = payload.obj("message")
-
-      val userId = message?.string("user")
-      val text = message?.string("text")
+      val userId = payload.obj("user")?.string("id")
+      val text = payload.obj("message")?.string("text")
 
       if (text == null || userId == null || channel == null) {
         LOG.error("bizarre, slack sent a malformed message")
