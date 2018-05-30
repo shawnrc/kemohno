@@ -1,25 +1,23 @@
 package me.shawnrc.kemohno
 
-import org.json.JSONObject
+import org.json.JSONException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 
 object SlackClient {
-  private const val IMAGE_ORIGINAL = "image_original"
   private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
   fun getUserData(userId: String, oauthToken: String): User {
-    val responseBlob = request(
-        verb = "get",
+    val response = khttp.get(
         url = "https://slack.com/api/users.profile.get",
         params = mapOf("token" to oauthToken, "user" to userId))
+    errorHandler(response)
+    val responseBlob = response.jsonObject
 
     val profile = responseBlob.getJSONObject("profile")
     val realName = profile.getString("real_name")
-    val imageUrl = if (profile.has(IMAGE_ORIGINAL)) {
-      profile.getString(IMAGE_ORIGINAL)
-    } else profile.getString("image_512")
+    val imageUrl = profile.getString("image_512")
     return User(realName, imageUrl)
   }
 
@@ -28,34 +26,33 @@ object SlackClient {
       channel: String,
       user: User,
       oauthToken: String) {
-    request("post", "https://slack.com/api/chat.postMessage", mapOf(
-        "text" to text,
-        "as_user" to "false",
-        "channel" to channel,
-        "icon_url" to user.imageUrl,
-        "username" to user.realName,
-        "response_type" to "in_channel",
-        "token" to oauthToken
-    ))
+    khttp.async.post(
+        url = "https://slack.com/api/chat.postMessage",
+        params = mapOf(
+            "text" to text,
+            "as_user" to "false",
+            "channel" to channel,
+            "icon_url" to user.imageUrl,
+            "username" to user.realName,
+            "response_type" to "in_channel",
+            "token" to oauthToken
+        ),
+        onResponse = errorHandler
+    )
   }
 
-  private fun request(
-      verb: String,
-      url: String,
-      params: Map<String, String>): JSONObject {
-    val response = when (verb) {
-      "get" -> khttp.get(url, params = params)
-      "post" -> khttp.post(url, params = params)
-      else -> throw Exception("unsupported verb $verb")
-    }
-    val responseBlob = response.jsonObject
-    if (response.statusCode != 200 || !responseBlob.getBoolean("ok")) {
-      val endpoint = File(url).name
-      LOG.error("call to $endpoint endpoint failed, dumping")
-      LOG.error(responseBlob["error"].toString())
+  private val errorHandler = { response: khttp.responses.Response ->
+    if (response.statusCode != 200) {
+      val endpoint = File(response.url).name
+      LOG.error("call to $endpoint endpoint failed")
+      try {
+        val json = response.jsonObject
+        LOG.error("ok=${json.getBoolean("ok")} error=${json.getString("error")}")
+      } catch (_: JSONException) {
+        LOG.error(response.text)
+      }
       throw Exception("bad call to $endpoint")
     }
-    return responseBlob
   }
 }
 
