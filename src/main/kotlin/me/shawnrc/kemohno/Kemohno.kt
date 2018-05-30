@@ -1,11 +1,14 @@
 package me.shawnrc.kemohno
 
+import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.json
+import org.json.JSONObject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import spark.kotlin.halt
 import spark.kotlin.ignite
+import java.awt.SystemColor.text
 import java.io.File
 
 const val CONFIG_PATH = "./config.json"
@@ -48,6 +51,37 @@ fun main(args: Array<String>) {
           user = user,
           oauthToken = config.oauthToken)
 
+      status(204)
+    }
+
+    post("/action") {
+      LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
+      if (request.queryParams("token") != config.verificationToken) halt(403)
+
+      val payload = JSON.parseJsonObject(request.body().reader()).obj("payload")
+      val channel = payload?.obj("channel")?.string("id")
+      val message = payload?.obj("message")
+
+      val userId = message?.string("user")
+      val text = message?.string("text")
+
+      if (text == null || userId == null || channel == null) {
+        LOG.error("bizarre, slack sent a malformed message")
+        LOG.error("body: ${request.body()}")
+        response.type(APPLICATION_JSON)
+        status(400)
+        return@post json { obj(
+            "response_type" to "ephemeral",
+            "text" to "slack failed to send a valid message")
+        }.toJsonString()
+      }
+
+      val user = SlackClient.getUserData(userId, config.oauthToken)
+      SlackClient.sendMessage(
+          text = emojifier.translate(text),
+          channel = channel,
+          user = user,
+          oauthToken = config.oauthToken)
       status(204)
     }
   }
