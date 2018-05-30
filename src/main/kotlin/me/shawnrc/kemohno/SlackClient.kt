@@ -9,6 +9,7 @@ object SlackClient {
   private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
   fun getUserData(userId: String, oauthToken: String): User {
+    LOG.info("hitting getUserData")
     val response = khttp.get(
         url = "https://slack.com/api/users.profile.get",
         params = mapOf("token" to oauthToken, "user" to userId))
