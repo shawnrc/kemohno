@@ -81,6 +81,7 @@ fun main(args: Array<String>) {
       }
 
       val user = SlackClient.getUserData(userId, config.oauthToken)
+      LOG.info("sending emojified message")
       SlackClient.sendMessage(
           text = emojifier.translate(text),
           channel = channel,
