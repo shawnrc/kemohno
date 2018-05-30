@@ -26,6 +26,7 @@ object SlackClient {
       channel: String,
       user: User,
       oauthToken: String) {
+    LOG.info("hitting chat.postMessage")
     khttp.async.post(
         url = "https://slack.com/api/chat.postMessage",
         params = mapOf(

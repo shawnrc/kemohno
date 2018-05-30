@@ -31,7 +31,10 @@ fun main(args: Array<String>) {
 
     post("/bepis") {
       LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
-      if (request.queryParams("token") != config.verificationToken) halt(403)
+      if (request.queryParams("token") != config.verificationToken) {
+        LOG.error("request had invalid token")
+        halt(403)
+      }
       val maybeText = request.queryParams("text")
       if (maybeText == null || maybeText.isEmpty()) {
         LOG.info("bad request, empty or nonexistent text field")
