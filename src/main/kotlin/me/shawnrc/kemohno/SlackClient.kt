@@ -42,7 +42,7 @@ object SlackClient {
   }
 
   private val errorHandler = { response: khttp.responses.Response ->
-    if (response.statusCode != 200) {
+    if (response.statusCode !in 200..299) {
       val endpoint = File(response.url).name
       LOG.error("call to $endpoint endpoint failed")
       try {
