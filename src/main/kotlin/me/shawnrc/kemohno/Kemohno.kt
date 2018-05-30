@@ -59,14 +59,14 @@ fun main(args: Array<String>) {
       LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
 
       val blob = URLDecoder.decode(request.queryParams("payload"), "utf-8")
-      val payload = JSON.parseJsonObject(blob.reader()).obj("payload")
-      if (payload?.string("token") != config.verificationToken) {
+      val payload = JSON.parseJsonObject(blob.reader())
+      if (payload.string("token") != config.verificationToken) {
         LOG.error("request had invalid token")
         halt(403)
       }
 
-      val channel = payload?.obj("channel")?.string("id")
-      val message = payload?.obj("message")
+      val channel = payload.obj("channel")?.string("id")
+      val message = payload.obj("message")
 
       val userId = message?.string("user")
       val text = message?.string("text")
