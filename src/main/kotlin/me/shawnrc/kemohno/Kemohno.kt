@@ -57,6 +57,7 @@ fun main(args: Array<String>) {
     post("/action") {
       LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
 
+      LOG.info("debug: ${request.body()}")
       val payload = JSON.parseJsonObject(request.body().reader()).obj("payload")
       if (payload?.string("token") != config.verificationToken) {
         LOG.error("request had invalid token")
