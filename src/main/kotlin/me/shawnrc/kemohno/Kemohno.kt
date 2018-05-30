@@ -59,12 +59,13 @@ fun main(args: Array<String>) {
 
     post("/action") {
       LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
-      if (request.queryParams("token") != config.verificationToken) {
+
+      val payload = JSON.parseJsonObject(request.body().reader()).obj("payload")
+      if (payload?.string("token") != config.verificationToken) {
         LOG.error("request had invalid token")
         halt(403)
       }
 
-      val payload = JSON.parseJsonObject(request.body().reader()).obj("payload")
       val channel = payload?.obj("channel")?.string("id")
       val message = payload?.obj("message")
 
