@@ -11,6 +11,7 @@ a bit easier.
 - Emojiposting attribution via user mimicking
 - Duplicate emoji minimization
 - special token passthrough
+- Slack message action support
 
 This repo is set up to be deployed on Heroku (Procfile + gradle jars) and can also work on OpenShift using Java S2I to
 run fat jars courtesy of [johnrengelman/shadow](https://github.com/johnrengelman/shadow).

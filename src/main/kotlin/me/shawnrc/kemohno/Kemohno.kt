@@ -1,14 +1,11 @@
 package me.shawnrc.kemohno
 
-import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.json
-import org.json.JSONObject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import spark.kotlin.halt
 import spark.kotlin.ignite
-import java.awt.SystemColor.text
 import java.io.File
 
 const val CONFIG_PATH = "./config.json"
