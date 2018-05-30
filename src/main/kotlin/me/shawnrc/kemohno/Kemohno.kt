@@ -10,7 +10,7 @@ import java.io.File
 
 const val CONFIG_PATH = "./config.json"
 const val EMOJI_PATH = "./emoji.json"
-const val APPLICATION_JSON = "application/json"
+const val APPLICATION_JSON = "application/json; charset=utf-8"
 
 val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
 val JSON = Klaxon()
@@ -29,7 +29,9 @@ fun main(args: Array<String>) {
     post("/bepis") {
       LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
       if (request.queryParams("token") != config.verificationToken) halt(403)
-      if (request.queryParams("text").isEmpty()) {
+      val maybeText = request.queryParams("text")
+      if (maybeText == null || maybeText.isEmpty()) {
+        LOG.info("bad request, empty or nonexistent text field")
         response.type(APPLICATION_JSON)
         status(400)
         return@post json { obj(
