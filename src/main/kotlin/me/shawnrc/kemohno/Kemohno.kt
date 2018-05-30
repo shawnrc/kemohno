@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import spark.kotlin.halt
 import spark.kotlin.ignite
 import java.io.File
+import java.net.URLDecoder
 
 const val CONFIG_PATH = "./config.json"
 const val EMOJI_PATH = "./emoji.json"
@@ -57,8 +58,8 @@ fun main(args: Array<String>) {
     post("/action") {
       LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
 
-      LOG.info("debug: ${request.contentType()}")
-      val payload = JSON.parseJsonObject(request.body().reader()).obj("payload")
+      val blob = URLDecoder.decode(request.queryParams("payload"), "utf-8")
+      val payload = JSON.parseJsonObject(blob.reader()).obj("payload")
       if (payload?.string("token") != config.verificationToken) {
         LOG.error("request had invalid token")
         halt(403)
