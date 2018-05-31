@@ -29,6 +29,11 @@ fun main(args: Array<String>) {
       "hello"
     }
 
+    get("/healthcheck") {
+      LOG.debug("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
+      "OK"
+    }
+
     post("/bepis") {
       LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
       if (request.queryParams("token") != config.verificationToken) {
