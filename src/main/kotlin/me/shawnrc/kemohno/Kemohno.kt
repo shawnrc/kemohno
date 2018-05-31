@@ -20,6 +20,7 @@ val JSON = Klaxon()
 fun main(args: Array<String>) {
   val config = getConfig()
   val emojifier = if (args.isNotEmpty()) Emojifier(args[0]) else Emojifier(EMOJI_PATH)
+  val slackClient = SlackClient(config.oauthToken)
   ignite().apply {
     port(config.port)
 
@@ -46,7 +47,7 @@ fun main(args: Array<String>) {
       }
 
       val userId = request.queryParams("user_id")
-      val user = SlackClient.getUserData(userId, config.oauthToken)
+      val user = slackClient.getUserData(userId)
       val translated = emojifier.translate(request.queryParams("text"))
 
       if (translated.length > 8000) {
@@ -59,11 +60,10 @@ fun main(args: Array<String>) {
         )}.toJsonString()
       }
 
-      SlackClient.sendMessage(
+      slackClient.sendMessage(
           text = translated,
           channel = request.queryParams("channel_id"),
-          user = user,
-          oauthToken = config.oauthToken)
+          user = user)
 
       status(204)
     }
@@ -103,13 +103,12 @@ fun main(args: Array<String>) {
         halt(400)
       }
 
-      val user = SlackClient.getUserData(userId, config.oauthToken)
+      val user = slackClient.getUserData(userId)
       LOG.info("sending emojified message")
-      SlackClient.sendMessage(
+      slackClient.sendMessage(
           text = translated,
           channel = channel,
-          user = user,
-          oauthToken = config.oauthToken)
+          user = user)
 
       status(204)
     }

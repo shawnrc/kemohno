@@ -5,16 +5,15 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 
-object SlackClient {
-  private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
-  private val CACHE = mutableMapOf(
+class SlackClient(private val oauthToken: String) {
+  private val userCache = mutableMapOf(
       "U053MCJHX" to User(
           "Don Julio Eiol",
           "https://avatars.slack-edge.com/2018-04-19/350748747254_dc26bc070ffa7bb86d29_192.jpg")
   )
 
-  fun getUserData(userId: String, oauthToken: String): User {
-    if (CACHE.containsKey(userId)) return CACHE.getValue(userId)
+  fun getUserData(userId: String): User {
+    if (userCache.containsKey(userId)) return userCache.getValue(userId)
 
     LOG.debug("hitting getUserData")
     val response = khttp.get(
@@ -32,8 +31,7 @@ object SlackClient {
   fun sendMessage(
       text: String,
       channel: String,
-      user: User,
-      oauthToken: String) {
+      user: User) {
     LOG.debug("hitting chat.postMessage")
     khttp.async.post(
         url = "https://slack.com/api/chat.postMessage",
@@ -50,17 +48,21 @@ object SlackClient {
     )
   }
 
-  private val errorHandler = { response: khttp.responses.Response ->
-    if (response.statusCode !in 200..299) {
-      val endpoint = File(response.url).name
-      LOG.error("call to $endpoint endpoint failed")
-      try {
-        val json = response.jsonObject
-        LOG.error("ok=${json.getBoolean("ok")} error=${json.getString("error")}")
-      } catch (_: JSONException) {
-        LOG.error(response.text)
+  private companion object {
+    private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
+
+    private val errorHandler = { response: khttp.responses.Response ->
+      if (response.statusCode !in 200..299) {
+        val endpoint = File(response.url).name
+        LOG.error("call to $endpoint endpoint failed")
+        try {
+          val json = response.jsonObject
+          LOG.error("ok=${json.getBoolean("ok")} error=${json.getString("error")}")
+        } catch (_: JSONException) {
+          LOG.error(response.text)
+        }
+        throw Exception("bad call to $endpoint")
       }
-      throw Exception("bad call to $endpoint")
     }
   }
 }
