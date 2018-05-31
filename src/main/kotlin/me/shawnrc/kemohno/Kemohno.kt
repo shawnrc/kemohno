@@ -1,10 +1,10 @@
 package me.shawnrc.kemohno
 
+import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.json
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import spark.kotlin.RouteHandler
 import spark.kotlin.halt
 import spark.kotlin.ignite
 import java.io.File
@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
         halt(403)
       }
       val maybeText = request.queryParams("text")
-      if (maybeText == null || maybeText.isEmpty()) {
+      if (maybeText.isNullOrBlank()) {
         LOG.info("bad request, empty or nonexistent text field")
         response.type(APPLICATION_JSON)
         status(400)
@@ -85,23 +85,22 @@ fun main(args: Array<String>) {
       if (text == null || userId == null || channel == null) {
         LOG.error("bizarre, slack sent a malformed message")
         LOG.error("body: ${request.body()}")
-        response.type(APPLICATION_JSON)
-        status(400)
-        return@post json { obj(
+        khttp.async.post(payload.getString("response_url"), json = mapOf(
             "response_type" to "ephemeral",
-            "text" to "slack failed to send a valid message")
-        }.toJsonString()
+            "text" to "Slack sent a malformed action :( try again?"
+        ))
+        status(400)
+        return@post ""
       }
 
       val translated = emojifier.translate(text)
       if (translated.length > 8000) {
         LOG.error("user sent a string way too large")
-        response.type(APPLICATION_JSON)
-        status(400)
-        return@post json { obj(
+        khttp.async.post(payload.getString("response_url"), json = mapOf(
             "response_type" to "ephemeral",
-            "text" to "that string was too large after emojification, try a smaller one."
-        )}.toJsonString()
+            "text" to "bad string"
+        ))
+        halt(400)
       }
 
       val user = SlackClient.getUserData(userId, config.oauthToken)
@@ -111,6 +110,7 @@ fun main(args: Array<String>) {
           channel = channel,
           user = user,
           oauthToken = config.oauthToken)
+
       status(204)
     }
   }
@@ -140,3 +140,6 @@ fun getConfig(): Config {
       port = System.getenv("PORT")?.toInt() ?: 4567,
       verificationToken = getEnv("VERIFY_TOKEN"))
 }
+
+fun JsonObject.getString(field: String): String =
+    string(field) ?: throw NoSuchElementException()
