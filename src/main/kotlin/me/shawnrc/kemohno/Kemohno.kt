@@ -4,6 +4,7 @@ import com.beust.klaxon.Klaxon
 import com.beust.klaxon.json
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import spark.kotlin.RouteHandler
 import spark.kotlin.halt
 import spark.kotlin.ignite
 import java.io.File
@@ -40,14 +41,26 @@ fun main(args: Array<String>) {
         status(400)
         return@post json { obj(
             "response_type" to "ephemeral",
-            "text" to "baka! I can't emojify an empty string! try again with some characters.")
-        }.toJsonString()
+            "text" to "baka! I can't emojify an empty string! try again with some characters."
+        )}.toJsonString()
       }
 
       val userId = request.queryParams("user_id")
       val user = SlackClient.getUserData(userId, config.oauthToken)
+      val translated = emojifier.translate(request.queryParams("text"))
+
+      if (translated.length > 8000) {
+        LOG.error("user sent a string way too large")
+        response.type(APPLICATION_JSON)
+        status(400)
+        return@post json { obj(
+            "response_type" to "ephemeral",
+            "text" to "that string was too large after emojification, try a smaller one."
+        )}.toJsonString()
+      }
+
       SlackClient.sendMessage(
-          text = emojifier.translate(request.queryParams("text")),
+          text = translated,
           channel = request.queryParams("channel_id"),
           user = user,
           oauthToken = config.oauthToken)
@@ -80,10 +93,21 @@ fun main(args: Array<String>) {
         }.toJsonString()
       }
 
+      val translated = emojifier.translate(text)
+      if (translated.length > 8000) {
+        LOG.error("user sent a string way too large")
+        response.type(APPLICATION_JSON)
+        status(400)
+        return@post json { obj(
+            "response_type" to "ephemeral",
+            "text" to "that string was too large after emojification, try a smaller one."
+        )}.toJsonString()
+      }
+
       val user = SlackClient.getUserData(userId, config.oauthToken)
       LOG.info("sending emojified message")
       SlackClient.sendMessage(
-          text = emojifier.translate(text),
+          text = translated,
           channel = channel,
           user = user,
           oauthToken = config.oauthToken)
