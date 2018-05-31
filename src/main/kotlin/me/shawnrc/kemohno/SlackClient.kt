@@ -7,8 +7,15 @@ import java.io.File
 
 object SlackClient {
   private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
+  private val CACHE = mutableMapOf(
+      "U053MCJHX" to User(
+          "Don Julio Eiol",
+          "https://avatars.slack-edge.com/2018-04-19/350748747254_dc26bc070ffa7bb86d29_192.jpg")
+  )
 
   fun getUserData(userId: String, oauthToken: String): User {
+    if (CACHE.containsKey(userId)) return CACHE.getValue(userId)
+
     LOG.debug("hitting getUserData")
     val response = khttp.get(
         url = "https://slack.com/api/users.profile.get",
