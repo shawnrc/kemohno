@@ -1,19 +1,28 @@
 package me.shawnrc.kemohno
 
+import com.beust.klaxon.Klaxon
 import org.json.JSONException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 
 class SlackClient(private val oauthToken: String) {
-  private val userCache = mutableMapOf(
-      "U053MCJHX" to User(
-          "Don Julio Eiol",
-          "https://avatars.slack-edge.com/2018-04-19/350748747254_dc26bc070ffa7bb86d29_192.jpg")
-  )
+  private val userCache = mutableMapOf<String, User>()
+
+  constructor(oauthToken: String, cacheSeed: String) : this(oauthToken) {
+    val seed = Klaxon().parseJsonObject(File(cacheSeed).reader())
+    for (key in seed.keys) {
+      val blob = seed.obj(key)
+      blob?.let {
+        userCache[key] = User(
+            it.getString("realName"),
+            it.getString("imageUrl"))
+      }
+    }
+  }
 
   fun getUserData(userId: String): User {
-    if (userCache.containsKey(userId)) return userCache.getValue(userId)
+    if (userId in userCache) return userCache.getValue(userId)
 
     LOG.debug("hitting getUserData")
     val response = khttp.get(
