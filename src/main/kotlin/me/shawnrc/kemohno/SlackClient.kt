@@ -10,6 +10,7 @@ class SlackClient(private val oauthToken: String) {
   private val userCache = mutableMapOf<String, User>()
 
   constructor(oauthToken: String, cacheSeed: String) : this(oauthToken) {
+    LOG.info("using provided userCache seed at $cacheSeed")
     val seed = Klaxon().parseJsonObject(File(cacheSeed).reader())
     for (key in seed.keys) {
       val blob = seed.obj(key)
