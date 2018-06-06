@@ -62,7 +62,7 @@ class SlackClient(private val oauthToken: String) {
     private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
     private val errorHandler = { response: khttp.responses.Response ->
-      if (response.statusCode !in 200..299) {
+      if (response.statusCode !in 200..299 || response.jsonObject["ok"] != "true") {
         val endpoint = File(response.url).name
         LOG.error("call to $endpoint endpoint failed")
         try {
