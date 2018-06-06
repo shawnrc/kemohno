@@ -13,6 +13,7 @@ import java.net.URLDecoder
 const val CONFIG_PATH = "./config.json"
 const val EMOJI_PATH = "./emoji.json"
 const val APPLICATION_JSON = "application/json; charset=utf-8"
+const val MAX_MESSAGE_SIZE = 8000
 
 val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
 val JSON = Klaxon()
@@ -59,9 +60,9 @@ fun main(args: Array<String>) {
 
       val userId = request.queryParams("user_id")
       val user = slackClient.getUserData(userId)
-      val translated = emojifier.translate(request.queryParams("text"))
+      val translated = emojifier.translate(maybeText)
 
-      if (translated.length > 8000) {
+      if (translated.length > MAX_MESSAGE_SIZE) {
         LOG.error("user sent a string way too large")
         response.type(APPLICATION_JSON)
         status(400)
