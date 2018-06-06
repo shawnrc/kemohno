@@ -23,9 +23,9 @@ fun main(args: Array<String>) {
   val emojifier = if (args.isNotEmpty()) Emojifier(args[0]) else Emojifier(EMOJI_PATH)
   val userCacheSeed = if (args.size > 1) args[1] else null
   val slackClient = if (userCacheSeed != null) {
-    SlackClient(config.oauthToken, userCacheSeed)
+    SlackClient(config.oauthToken, config.botToken, userCacheSeed)
   } else {
-    SlackClient(config.oauthToken)
+    SlackClient(config.oauthToken, config.botToken)
   }
 
   ignite().apply {
@@ -129,6 +129,7 @@ fun main(args: Array<String>) {
 
 data class Config(
     val appId: String,
+    val botToken: String,
     val clientId: String,
     val clientSecret: String,
     val oauthToken: String,
@@ -145,6 +146,7 @@ fun getConfig(): Config {
     JSON.parse<Config>(handle) ?: throw Exception("config file existed, but failed to 🅱️arse :/")
   } else Config(
       appId = getEnv("APP_ID"),
+      botToken = getEnv("BOT_TOKEN"),
       clientId = getEnv("CLIENT_ID"),
       clientSecret = getEnv("CLIENT_SECRET"),
       oauthToken = getEnv("SLACK_OAUTH_TOKEN"),

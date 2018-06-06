@@ -6,10 +6,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 
-class SlackClient(private val oauthToken: String) {
+class SlackClient(private val oauthToken: String, private val botToken: String) {
   private val userCache = mutableMapOf<String, User>()
 
-  constructor(oauthToken: String, cacheSeed: String) : this(oauthToken) {
+  constructor(oauthToken: String, botToken: String, cacheSeed: String) : this(oauthToken, botToken) {
     LOG.info("using provided userCache seed at $cacheSeed")
     val seed = Klaxon().parseJsonObject(File(cacheSeed).reader())
     for (key in seed.keys) {
@@ -52,7 +52,7 @@ class SlackClient(private val oauthToken: String) {
             "icon_url" to user.imageUrl,
             "username" to user.realName,
             "response_type" to "in_channel",
-            "token" to oauthToken
+            "token" to botToken
         ),
         onResponse = errorHandler
     )
