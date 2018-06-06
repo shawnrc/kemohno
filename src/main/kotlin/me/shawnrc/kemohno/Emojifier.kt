@@ -7,7 +7,6 @@ import java.util.*
 import kotlin.math.min
 
 class Emojifier(emojiPath: String) {
-  private val random = Random()
   private val emojiMap = Klaxon().parseJsonObject(
       File(emojiPath).bufferedReader(Charset.defaultCharset()))
 
@@ -26,7 +25,7 @@ class Emojifier(emojiPath: String) {
       val currentLetter = normalized[index].toString()
       val letterPool = emojiMap.array<String>(currentLetter)
       val selected = letterPool?.randomItem() ?: currentLetter
-      if (selected.isEmoji()) {
+      if (selected.isEmoji) {
         if (selected in usedEmoji && retries < 2) {
           ++retries
           continue
@@ -40,16 +39,19 @@ class Emojifier(emojiPath: String) {
     }
   }
 
-  private fun String.bemojiAt(start: Int, end: Int): Boolean {
-    return substring(start until min(end, length)) == ":B:"
-  }
+  private companion object {
+    private val RANDOM = Random()
 
-  private fun String.isEmoji(): Boolean {
-    return startsWith(':') && endsWith(':')
-  }
+    private val String.isEmoji: Boolean
+      get() = startsWith(':') && endsWith(':')
 
-  private fun <E> List<E>.randomItem(): E {
-    if (isEmpty()) throw IndexOutOfBoundsException("randomItem called on empty list")
-    return this[random.nextInt(size)]
+    private fun String.bemojiAt(start: Int, end: Int): Boolean {
+      return substring(start until min(end, length)) == ":B:"
+    }
+
+    private fun <E> List<E>.randomItem(): E {
+      if (isEmpty()) throw IndexOutOfBoundsException("randomItem called on empty list")
+      return this[RANDOM.nextInt(size)]
+    }
   }
 }
