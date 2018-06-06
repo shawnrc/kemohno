@@ -62,18 +62,24 @@ class SlackClient(private val oauthToken: String) {
     private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
     private val errorHandler = { response: khttp.responses.Response ->
-      if (response.statusCode !in 200..299 || response.jsonObject["ok"] != "true") {
-        val endpoint = File(response.url).name
+      if (response.statusCode !in 200..299 || !response.jsonObject.getBoolean("ok")) {
+        val endpoint = response.endpoint
         LOG.error("call to $endpoint endpoint failed")
         try {
           val json = response.jsonObject
           LOG.error("ok=${json.getBoolean("ok")} error=${json.getString("error")}")
         } catch (_: JSONException) {
-          LOG.error(response.text)
+          when (response.statusCode) {
+            in 400..499 -> LOG.error("client error: ${response.statusCode}")
+            in 500..599 -> LOG.error("slack servers are malfunctioning, aborting")
+          }
         }
         throw Exception("bad call to $endpoint")
       }
     }
+
+    private val khttp.responses.Response.endpoint
+      get() = File(url).name.split('?')[0]
   }
 }
 
