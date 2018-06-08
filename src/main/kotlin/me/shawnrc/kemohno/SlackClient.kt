@@ -47,7 +47,7 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
         url = "https://slack.com/api/chat.postMessage",
         headers = mapOf(
             "Content-Type" to APPLICATION_JSON,
-            "Authorization" to botToken),
+            "Authorization" to "Bearer $botToken"),
         json = mapOf(
             "text" to text,
             "as_user" to "false",
@@ -55,8 +55,7 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
             "icon_url" to user.imageUrl,
             "username" to user.realName,
             "response_type" to "in_channel",
-            "token" to botToken
-        ),
+            "token" to botToken),
         onResponse = errorHandler
     )
   }
