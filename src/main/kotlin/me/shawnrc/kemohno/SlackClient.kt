@@ -79,9 +79,9 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
         }
         throw Exception("bad call to $endpoint")
       }
-      response.jsonObject
-          .getString("warning")
-          ?.let { LOG.warn("warning from api: $it") }
+      if (response.jsonObject.has("warning")) {
+        LOG.warn("warning from api: ${response.jsonObject["warning"]}")
+      }
     }
 
     private val Response.endpoint
