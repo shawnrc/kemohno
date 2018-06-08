@@ -1,6 +1,7 @@
 package me.shawnrc.kemohno
 
 import com.beust.klaxon.Klaxon
+import khttp.responses.Response
 import org.json.JSONException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -63,7 +64,7 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
   private companion object {
     private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
-    private val errorHandler = { response: khttp.responses.Response ->
+    private val errorHandler: (Response) -> Unit = { response: Response ->
       if (response.statusCode !in 200..299 || !response.jsonObject.getBoolean("ok")) {
         val endpoint = response.endpoint
         LOG.error("call to $endpoint endpoint failed")
@@ -78,9 +79,12 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
         }
         throw Exception("bad call to $endpoint")
       }
+      response.jsonObject
+          .getString("warning")
+          ?.let { LOG.warn("warning from api: $it") }
     }
 
-    private val khttp.responses.Response.endpoint
+    private val Response.endpoint
       get() = File(url).name.split('?')[0]
   }
 }
