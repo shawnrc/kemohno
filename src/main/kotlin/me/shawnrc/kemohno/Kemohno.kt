@@ -13,7 +13,7 @@ import java.net.URLDecoder
 const val CONFIG_PATH = "./config.json"
 const val EMOJI_PATH = "./emoji.json"
 const val APPLICATION_JSON = "application/json; charset=utf-8"
-const val MAX_MESSAGE_SIZE = 8000
+const val MAX_MESSAGE_SIZE = 500000
 
 val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
 val JSON = Klaxon()
