@@ -45,7 +45,10 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
     LOG.debug("hitting chat.postMessage")
     khttp.async.post(
         url = "https://slack.com/api/chat.postMessage",
-        params = mapOf(
+        headers = mapOf(
+            "Content-Type" to APPLICATION_JSON,
+            "Authorization" to botToken),
+        json = mapOf(
             "text" to text,
             "as_user" to "false",
             "channel" to channel,
