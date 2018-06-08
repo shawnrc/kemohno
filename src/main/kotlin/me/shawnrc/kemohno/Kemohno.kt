@@ -128,10 +128,7 @@ fun main(args: Array<String>) {
 }
 
 data class Config(
-    val appId: String,
     val botToken: String,
-    val clientId: String,
-    val clientSecret: String,
     val oauthToken: String,
     val port: Int,
     val verificationToken: String)
@@ -145,12 +142,9 @@ fun getConfig(): Config {
     LOG.info("using config file")
     JSON.parse<Config>(handle) ?: throw Exception("config file existed, but failed to 🅱️arse :/")
   } else Config(
-      appId = getEnv("APP_ID"),
       botToken = getEnv("BOT_TOKEN"),
-      clientId = getEnv("CLIENT_ID"),
-      clientSecret = getEnv("CLIENT_SECRET"),
       oauthToken = getEnv("SLACK_OAUTH_TOKEN"),
-      port = System.getenv("PORT")?.toInt() ?: 4567,
+      port = System.getenv("PORT")?.toInt() ?: 8080,
       verificationToken = getEnv("VERIFY_TOKEN"))
 }
 
