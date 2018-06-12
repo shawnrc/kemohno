@@ -133,8 +133,10 @@ data class Config(
     val port: Int,
     val verificationToken: String)
 
-fun getEnv(string: String): String =
-    System.getenv(string) ?: throw Exception("missing env var: $string")
+object Env {
+  operator fun get(name: String): String =
+      System.getenv(name) ?: throw Exception("missing env var: $name")
+}
 
 fun getConfig(): Config {
   val handle = File(CONFIG_PATH)
@@ -142,10 +144,10 @@ fun getConfig(): Config {
     LOG.info("using config file")
     JSON.parse<Config>(handle) ?: throw Exception("config file existed, but failed to 🅱️arse :/")
   } else Config(
-      botToken = getEnv("BOT_TOKEN"),
-      oauthToken = getEnv("SLACK_OAUTH_TOKEN"),
+      botToken = Env["BOT_TOKEN"],
+      oauthToken = Env["SLACK_OAUTH_TOKEN"],
       port = System.getenv("PORT")?.toInt() ?: 8080,
-      verificationToken = getEnv("VERIFY_TOKEN"))
+      verificationToken = Env["VERIFY_TOKEN"])
 }
 
 fun JsonObject.getString(field: String): String =
