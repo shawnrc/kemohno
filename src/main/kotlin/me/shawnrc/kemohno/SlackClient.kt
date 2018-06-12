@@ -1,19 +1,30 @@
 package me.shawnrc.kemohno
 
+import com.beust.klaxon.Klaxon
+import khttp.responses.Response
 import org.json.JSONException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 
-class SlackClient(private val oauthToken: String) {
-  private val userCache = mutableMapOf(
-      "U053MCJHX" to User(
-          "Don Julio Eiol",
-          "https://avatars.slack-edge.com/2018-04-19/350748747254_dc26bc070ffa7bb86d29_192.jpg")
-  )
+class SlackClient(private val oauthToken: String, private val botToken: String) {
+  private val userCache = mutableMapOf<String, User>()
+
+  constructor(oauthToken: String, botToken: String, cacheSeed: String) : this(oauthToken, botToken) {
+    LOG.info("using provided userCache seed at $cacheSeed")
+    val seed = Klaxon().parseJsonObject(File(cacheSeed).reader())
+    for (key in seed.keys) {
+      val blob = seed.obj(key)
+      blob?.let {
+        userCache[key] = User(
+            it.getString("realName"),
+            it.getString("imageUrl"))
+      }
+    }
+  }
 
   fun getUserData(userId: String): User {
-    if (userCache.containsKey(userId)) return userCache.getValue(userId)
+    if (userId in userCache) return userCache.getValue(userId)
 
     LOG.debug("hitting getUserData")
     val response = khttp.get(
@@ -35,15 +46,17 @@ class SlackClient(private val oauthToken: String) {
     LOG.debug("hitting chat.postMessage")
     khttp.async.post(
         url = "https://slack.com/api/chat.postMessage",
-        params = mapOf(
+        headers = mapOf(
+            "Content-Type" to APPLICATION_JSON,
+            "Authorization" to "Bearer $botToken"),
+        json = mapOf(
             "text" to text,
-            "as_user" to "false",
+            "as_user" to false,
             "channel" to channel,
             "icon_url" to user.imageUrl,
             "username" to user.realName,
             "response_type" to "in_channel",
-            "token" to oauthToken
-        ),
+            "token" to botToken),
         onResponse = errorHandler
     )
   }
@@ -51,19 +64,28 @@ class SlackClient(private val oauthToken: String) {
   private companion object {
     private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
-    private val errorHandler = { response: khttp.responses.Response ->
-      if (response.statusCode !in 200..299) {
-        val endpoint = File(response.url).name
+    private val errorHandler = { response: Response ->
+      if (response.statusCode !in 200..299 || !response.jsonObject.getBoolean("ok")) {
+        val endpoint = response.endpoint
         LOG.error("call to $endpoint endpoint failed")
         try {
           val json = response.jsonObject
           LOG.error("ok=${json.getBoolean("ok")} error=${json.getString("error")}")
         } catch (_: JSONException) {
-          LOG.error(response.text)
+          when (response.statusCode) {
+            in 400..499 -> LOG.error("client error: ${response.statusCode}")
+            in 500..599 -> LOG.error("slack servers are malfunctioning, aborting")
+          }
         }
         throw Exception("bad call to $endpoint")
       }
+      if (response.jsonObject.has("warning")) {
+        LOG.warn("warning from api: ${response.jsonObject["warning"]}")
+      }
     }
+
+    private val Response.endpoint
+      get() = File(url).name.split('?')[0]
   }
 }
 

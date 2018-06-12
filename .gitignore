@@ -65,3 +65,5 @@ atlassian-ide-plugin.xml
 
 # convenience config file
 config.json
+
+users_seed.json

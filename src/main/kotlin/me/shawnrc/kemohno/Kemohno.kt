@@ -13,6 +13,7 @@ import java.net.URLDecoder
 const val CONFIG_PATH = "./config.json"
 const val EMOJI_PATH = "./emoji.json"
 const val APPLICATION_JSON = "application/json; charset=utf-8"
+const val MAX_MESSAGE_SIZE = 500000
 
 val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
 val JSON = Klaxon()
@@ -20,7 +21,13 @@ val JSON = Klaxon()
 fun main(args: Array<String>) {
   val config = getConfig()
   val emojifier = if (args.isNotEmpty()) Emojifier(args[0]) else Emojifier(EMOJI_PATH)
-  val slackClient = SlackClient(config.oauthToken)
+  val userCacheSeed = if (args.size > 1) args[1] else null
+  val slackClient = if (userCacheSeed != null) {
+    SlackClient(config.oauthToken, config.botToken, userCacheSeed)
+  } else {
+    SlackClient(config.oauthToken, config.botToken)
+  }
+
   ignite().apply {
     port(config.port)
 
@@ -53,9 +60,9 @@ fun main(args: Array<String>) {
 
       val userId = request.queryParams("user_id")
       val user = slackClient.getUserData(userId)
-      val translated = emojifier.translate(request.queryParams("text"))
+      val translated = emojifier.translate(maybeText)
 
-      if (translated.length > 8000) {
+      if (translated.length > MAX_MESSAGE_SIZE) {
         LOG.error("user sent a string way too large")
         response.type(APPLICATION_JSON)
         status(400)
@@ -121,9 +128,7 @@ fun main(args: Array<String>) {
 }
 
 data class Config(
-    val appId: String,
-    val clientId: String,
-    val clientSecret: String,
+    val botToken: String,
     val oauthToken: String,
     val port: Int,
     val verificationToken: String)
@@ -137,11 +142,9 @@ fun getConfig(): Config {
     LOG.info("using config file")
     JSON.parse<Config>(handle) ?: throw Exception("config file existed, but failed to 🅱️arse :/")
   } else Config(
-      appId = getEnv("APP_ID"),
-      clientId = getEnv("CLIENT_ID"),
-      clientSecret = getEnv("CLIENT_SECRET"),
+      botToken = getEnv("BOT_TOKEN"),
       oauthToken = getEnv("SLACK_OAUTH_TOKEN"),
-      port = System.getenv("PORT")?.toInt() ?: 4567,
+      port = System.getenv("PORT")?.toInt() ?: 8080,
       verificationToken = getEnv("VERIFY_TOKEN"))
 }
 
