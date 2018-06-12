@@ -51,7 +51,7 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
             "Authorization" to "Bearer $botToken"),
         json = mapOf(
             "text" to text,
-            "as_user" to "false",
+            "as_user" to false,
             "channel" to channel,
             "icon_url" to user.imageUrl,
             "username" to user.realName,
@@ -64,7 +64,7 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
   private companion object {
     private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
-    private val errorHandler: (Response) -> Unit = { response: Response ->
+    private val errorHandler = { response: Response ->
       if (response.statusCode !in 200..299 || !response.jsonObject.getBoolean("ok")) {
         val endpoint = response.endpoint
         LOG.error("call to $endpoint endpoint failed")
