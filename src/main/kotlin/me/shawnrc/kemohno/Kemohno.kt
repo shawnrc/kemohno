@@ -105,8 +105,9 @@ fun main(args: Array<String>) {
         return@post ""
       }
 
-      val translated = emojifier.translate(text)
-      if (translated.length > 8000) {
+      val stripped = Emojifier.stripRawMentions(text)
+      val translated = emojifier.translate(stripped)
+      if (translated.length > MAX_MESSAGE_SIZE) {
         LOG.error("user sent a string way too large")
         khttp.async.post(payload.getString("response_url"), json = mapOf(
             "response_type" to "ephemeral",

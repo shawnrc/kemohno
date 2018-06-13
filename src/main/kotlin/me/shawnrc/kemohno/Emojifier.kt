@@ -39,8 +39,12 @@ class Emojifier(emojiPath: String) {
     }
   }
 
-  private companion object {
+  companion object {
     private val RANDOM = Random()
+
+    fun stripRawMentions(text: String): String =
+      text.replace("""<@\S{9}>""".toRegex(), "")
+          .replace("""<([@#])\S{9}\|(\S+)>""".toRegex(), "$1$2")
 
     private val String.isEmoji: Boolean
       get() = startsWith(':') && endsWith(':')
