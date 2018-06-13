@@ -105,8 +105,7 @@ fun main(args: Array<String>) {
         return@post ""
       }
 
-      val stripped = Emojifier.stripRawMentions(text)
-      val translated = emojifier.translate(stripped)
+      val translated = emojifier.translate(text.sanitized)
       if (translated.length > MAX_MESSAGE_SIZE) {
         LOG.error("user sent a string way too large")
         khttp.async.post(payload.getString("response_url"), json = mapOf(
@@ -128,18 +127,25 @@ fun main(args: Array<String>) {
   }
 }
 
-data class Config(
+internal val String.sanitized: String
+  get() = replace(Regex("""<@\S{9}>"""), "")
+      .replace(Regex("""<([@#])\S{9}\|(\S+)>"""), "$1$2")
+
+internal fun JsonObject.getString(field: String): String =
+    string(field) ?: throw NoSuchElementException()
+
+private data class Config(
     val botToken: String,
     val oauthToken: String,
     val port: Int,
     val verificationToken: String)
 
-object Env {
+private object Env {
   operator fun get(name: String): String =
       System.getenv(name) ?: throw Exception("missing env var: $name")
 }
 
-fun getConfig(): Config {
+private fun getConfig(): Config {
   val handle = File(CONFIG_PATH)
   return if (handle.exists()) {
     LOG.info("using config file")
@@ -150,6 +156,3 @@ fun getConfig(): Config {
       port = System.getenv("PORT")?.toInt() ?: 8080,
       verificationToken = Env["VERIFY_TOKEN"])
 }
-
-fun JsonObject.getString(field: String): String =
-    string(field) ?: throw NoSuchElementException()
