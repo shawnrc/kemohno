@@ -2,6 +2,8 @@ package me.shawnrc.kemohno
 
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.Charset
 import java.util.*
@@ -59,6 +61,7 @@ class Emojifier(emojiPath: String) {
 
   private companion object {
     private val RANDOM = Random()
+    private val LOG: Logger = LoggerFactory.getLogger(Emojifier::class.java)
 
     private val String.isEmoji: Boolean
       get() = startsWith(':') && endsWith(':')
