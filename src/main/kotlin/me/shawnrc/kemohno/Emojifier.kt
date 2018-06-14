@@ -1,5 +1,6 @@
 package me.shawnrc.kemohno
 
+import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import java.io.File
 import java.nio.charset.Charset
@@ -7,8 +8,25 @@ import java.util.*
 import kotlin.math.min
 
 class Emojifier(emojiPath: String) {
-  private val emojiMap = Klaxon().parseJsonObject(
-      File(emojiPath).bufferedReader(Charset.defaultCharset()))
+  private val emojiMap: JsonObject
+
+  init {
+    val parser = Klaxon()
+    emojiMap = if (emojiPath.startsWith("http")) {
+      LOG.info("fetching emoji map from external http source")
+      val response = khttp.get(emojiPath)
+      if (response.statusCode !in 200..299) {
+        LOG.error("failed to fetch emoji map, aborting")
+        LOG.error("fetch failed, status ${response.statusCode}")
+        throw Exception("failed to get emoji")
+      }
+      parser.parseJsonObject(response.text.reader())
+    } else {
+      LOG.info("using emojifile at $emojiPath")
+      parser.parseJsonObject(
+          File(emojiPath).bufferedReader(Charset.defaultCharset()))
+    }
+  }
 
   fun translate(string: String): String = buildString {
     val normalized = string.toUpperCase()

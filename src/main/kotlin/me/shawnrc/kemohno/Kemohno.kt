@@ -20,8 +20,8 @@ val JSON = Klaxon()
 
 fun main(args: Array<String>) {
   val config = getConfig()
-  val emojifier = if (args.isNotEmpty()) Emojifier(args[0]) else Emojifier(EMOJI_PATH)
-  val userCacheSeed = if (args.size > 1) args[1] else null
+  val emojifier = Emojifier(args.getOrNull(0) ?: EMOJI_PATH)
+  val userCacheSeed = args.getOrNull(1)
   val slackClient = if (userCacheSeed != null) {
     SlackClient(config.oauthToken, config.botToken, userCacheSeed)
   } else {
