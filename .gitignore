@@ -66,4 +66,5 @@ atlassian-ide-plugin.xml
 # convenience config file
 config.json
 
+emoji.json
 users_seed.json
