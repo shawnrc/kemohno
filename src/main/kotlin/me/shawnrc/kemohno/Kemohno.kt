@@ -20,7 +20,10 @@ val JSON = Klaxon()
 
 fun main(args: Array<String>) {
   val config = getConfig()
-  val emojifier = Emojifier(args.getOrNull(0) ?: EMOJI_PATH)
+  val emojifier = Emojifier(
+      args.getOrNull(0)
+          ?: config.emojiPath
+          ?: EMOJI_PATH)
   val userCacheSeed = args.getOrNull(1)
   val slackClient = if (userCacheSeed != null) {
     SlackClient(config.oauthToken, config.botToken, userCacheSeed)
@@ -136,6 +139,7 @@ internal fun JsonObject.getString(field: String): String =
 
 private data class Config(
     val botToken: String,
+    val emojiPath: String?,
     val oauthToken: String,
     val port: Int,
     val verificationToken: String)
@@ -152,6 +156,7 @@ private fun getConfig(): Config {
     JSON.parse<Config>(handle) ?: throw Exception("config file existed, but failed to 🅱️arse :/")
   } else Config(
       botToken = Env["BOT_TOKEN"],
+      emojiPath = System.getenv("EMOJI_PATH"),
       oauthToken = Env["SLACK_OAUTH_TOKEN"],
       port = System.getenv("PORT")?.toInt() ?: 8080,
       verificationToken = Env["VERIFY_TOKEN"])
