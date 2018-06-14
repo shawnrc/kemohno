@@ -24,12 +24,9 @@ fun main(args: Array<String>) {
       args.getOrNull(0)
           ?: config.emojiPath
           ?: EMOJI_PATH)
-  val userCacheSeed = args.getOrNull(1)
-  val slackClient = if (userCacheSeed != null) {
+  val slackClient = args.getOrNull(1)?.let { userCacheSeed ->
     SlackClient(config.oauthToken, config.botToken, userCacheSeed)
-  } else {
-    SlackClient(config.oauthToken, config.botToken)
-  }
+  } ?: SlackClient(config.oauthToken, config.botToken)
 
   ignite().apply {
     port(config.port)
@@ -139,7 +136,7 @@ internal fun JsonObject.getString(field: String): String =
 
 private data class Config(
     val botToken: String,
-    val emojiPath: String?,
+    val emojiPath: String? = null,
     val oauthToken: String,
     val port: Int,
     val verificationToken: String)
