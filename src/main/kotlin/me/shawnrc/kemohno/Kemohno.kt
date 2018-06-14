@@ -15,13 +15,16 @@ const val EMOJI_PATH = "./emoji.json"
 const val APPLICATION_JSON = "application/json; charset=utf-8"
 const val MAX_MESSAGE_SIZE = 500000
 
-val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
-val JSON = Klaxon()
+private val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
+private val JSON = Klaxon()
 
 fun main(args: Array<String>) {
   val config = getConfig()
-  val emojifier = if (args.isNotEmpty()) Emojifier(args[0]) else Emojifier(EMOJI_PATH)
-  val userCacheSeed = if (args.size > 1) args[1] else null
+  val emojifier = Emojifier(
+      args.getOrNull(0)
+          ?: config.emojiPath
+          ?: EMOJI_PATH)
+  val userCacheSeed = args.getOrNull(1)
   val slackClient = if (userCacheSeed != null) {
     SlackClient(config.oauthToken, config.botToken, userCacheSeed)
   } else {
@@ -105,8 +108,8 @@ fun main(args: Array<String>) {
         return@post ""
       }
 
-      val translated = emojifier.translate(text)
-      if (translated.length > 8000) {
+      val translated = emojifier.translate(text.sanitized)
+      if (translated.length > MAX_MESSAGE_SIZE) {
         LOG.error("user sent a string way too large")
         khttp.async.post(payload.getString("response_url"), json = mapOf(
             "response_type" to "ephemeral",
@@ -127,26 +130,34 @@ fun main(args: Array<String>) {
   }
 }
 
-data class Config(
+internal val String.sanitized: String
+  get() = replace(Regex("""<@\S{9}>"""), "")
+      .replace(Regex("""<([@#])\S{9}\|(\S+)>"""), "$1$2")
+
+internal fun JsonObject.getString(field: String): String =
+    string(field) ?: throw NoSuchElementException()
+
+private data class Config(
     val botToken: String,
+    val emojiPath: String?,
     val oauthToken: String,
     val port: Int,
     val verificationToken: String)
 
-fun getEnv(string: String): String =
-    System.getenv(string) ?: throw Exception("missing env var: $string")
+private object Env {
+  operator fun get(name: String): String =
+      System.getenv(name) ?: throw Exception("missing env var: $name")
+}
 
-fun getConfig(): Config {
+private fun getConfig(): Config {
   val handle = File(CONFIG_PATH)
   return if (handle.exists()) {
     LOG.info("using config file")
     JSON.parse<Config>(handle) ?: throw Exception("config file existed, but failed to 🅱️arse :/")
   } else Config(
-      botToken = getEnv("BOT_TOKEN"),
-      oauthToken = getEnv("SLACK_OAUTH_TOKEN"),
+      botToken = Env["BOT_TOKEN"],
+      emojiPath = System.getenv("EMOJI_PATH"),
+      oauthToken = Env["SLACK_OAUTH_TOKEN"],
       port = System.getenv("PORT")?.toInt() ?: 8080,
-      verificationToken = getEnv("VERIFY_TOKEN"))
+      verificationToken = Env["VERIFY_TOKEN"])
 }
-
-fun JsonObject.getString(field: String): String =
-    string(field) ?: throw NoSuchElementException()
