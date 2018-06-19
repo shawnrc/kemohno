@@ -5,22 +5,19 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Reader
-import java.nio.charset.Charset
 import kotlin.math.min
 
 class Emojifier(emojiPath: String) {
   private val dispenser: EmojiDispenser
 
   init {
-    val parser = Klaxon()
-    val emojiMap = if (emojiPath.startsWith("http")) {
-      parser.parseJsonObject(getRemoteEmojiReader(emojiPath))
+    val reader = if (emojiPath.startsWith("http")) {
+      getRemoteEmojiReader(emojiPath)
     } else {
       LOG.info("using emojifile at $emojiPath")
-      parser.parseJsonObject(
-          File(emojiPath).bufferedReader(Charset.defaultCharset()))
+      File(emojiPath).reader()
     }
-    dispenser = EmojiDispenser(emojiMap)
+    dispenser = EmojiDispenser(emojiBlob = Klaxon().parseJsonObject(reader))
   }
 
   fun translate(string: String): String = buildString {
@@ -44,7 +41,7 @@ class Emojifier(emojiPath: String) {
     fun getRemoteEmojiReader(emojiPath: String): Reader {
       LOG.info("fetching emoji map from external http source")
       val response = khttp.get(emojiPath)
-      if (response.statusCode !in 200..299) {
+      if (response.statusCode != 200) {
         LOG.error("failed to fetch emoji map, aborting")
         LOG.error("fetch failed, status ${response.statusCode}")
         throw Exception("failed to get emoji")

@@ -20,12 +20,11 @@ private val JSON = Klaxon()
 
 fun main(args: Array<String>) {
   val config = getConfig()
-  val emojifier = Emojifier(
-      args.getOrNull(0)
-          ?: config.emojiPath
-          ?: EMOJI_PATH)
-  val slackClient = args.getOrNull(1)?.let { userCacheSeed ->
-    SlackClient(config.oauthToken, config.botToken, userCacheSeed)
+  val emojifier = Emojifier(args.firstOrNull()
+      ?: config.emojiPath
+      ?: EMOJI_PATH)
+  val slackClient = args.getOrNull(index = 1)?.let {
+    SlackClient(config.oauthToken, config.botToken, cacheSeed = it)
   } ?: SlackClient(config.oauthToken, config.botToken)
 
   ignite().apply {
@@ -116,7 +115,7 @@ fun main(args: Array<String>) {
       }
 
       val user = slackClient.getUserData(userId)
-      LOG.info("sending emojified message")
+      LOG.debug("sending emojified message")
       slackClient.sendMessage(
           text = translated,
           channel = channel,

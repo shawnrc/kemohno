@@ -13,9 +13,7 @@ class EmojiDispenser(private val emojiBlob: JsonObject) {
     val key = char.toString()
     val emojiQueue = emojiMap[char] ?: return key
     if (emojiQueue.isEmpty()) {
-      val shuffled = emojiBlob.array<String>(key)
-          ?.shuffled()
-          ?.toMutableList() ?: return key
+      val shuffled = emojiBlob.array<String>(key)?.shuffled() ?: return key
       emojiQueue.addAll(shuffled)
     }
     return emojiQueue.remove()

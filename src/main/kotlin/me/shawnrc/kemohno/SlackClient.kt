@@ -9,6 +9,9 @@ import java.io.File
 
 class SlackClient(private val oauthToken: String, private val botToken: String) {
   private val userCache = mutableMapOf<String, User>()
+  private val apiPostHeaders = mapOf(
+      "Content-Type" to APPLICATION_JSON,
+      "Authorization" to "Bearer $botToken")
 
   constructor(oauthToken: String, botToken: String, cacheSeed: String) : this(oauthToken, botToken) {
     LOG.info("using provided userCache seed at $cacheSeed")
@@ -46,9 +49,7 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
     LOG.debug("hitting chat.postMessage")
     khttp.async.post(
         url = "https://slack.com/api/chat.postMessage",
-        headers = mapOf(
-            "Content-Type" to APPLICATION_JSON,
-            "Authorization" to "Bearer $botToken"),
+        headers = apiPostHeaders,
         json = mapOf(
             "text" to text,
             "as_user" to false,
