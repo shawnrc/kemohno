@@ -23,7 +23,7 @@ fun main(args: Array<String>) {
   val emojifier = Emojifier(args.firstOrNull()
       ?: config.emojiPath
       ?: EMOJI_PATH)
-  val slackClient = args.getOrNull(index = 1)?.let {
+  val slackClient = (args.getOrNull(index = 1) ?: config.userSeedPath)?.let {
     SlackClient(config.oauthToken, config.botToken, cacheSeed = it)
   } ?: SlackClient(config.oauthToken, config.botToken)
 
@@ -137,11 +137,12 @@ internal fun JsonObject.getString(field: String): String =
     string(field) ?: throw NoSuchElementException()
 
 private data class Config(
-    val botToken: String,
-    val emojiPath: String? = null,
-    val oauthToken: String,
     val port: Int,
-    val verificationToken: String)
+    val botToken: String,
+    val oauthToken: String,
+    val verificationToken: String,
+    val emojiPath: String? = null,
+    val userSeedPath: String? = null)
 
 private object Env {
   operator fun get(name: String): String =
@@ -154,9 +155,10 @@ private fun getConfig(): Config {
     LOG.info("using config file")
     JSON.parse<Config>(handle) ?: throw Exception("config file existed, but failed to 🅱️arse :/")
   } else Config(
-      botToken = Env["BOT_TOKEN"],
-      emojiPath = System.getenv("EMOJI_PATH"),
-      oauthToken = Env["SLACK_OAUTH_TOKEN"],
       port = System.getenv("PORT")?.toInt() ?: 8080,
+      emojiPath = System.getenv("EMOJI_PATH"),
+      userSeedPath = System.getenv("USER_SEED_PATH"),
+      botToken = Env["BOT_TOKEN"],
+      oauthToken = Env["SLACK_OAUTH_TOKEN"],
       verificationToken = Env["VERIFY_TOKEN"])
 }
