@@ -125,10 +125,15 @@ fun main(args: Array<String>) {
     }
 
     post("/event") {
+      LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
+
       val blob = JSON.parseJsonObject(request.body().reader())
       val maybeType = blob.string("type")
 
-      if (maybeType == null) {
+      if (maybeType == "url_verification") {
+        LOG.info("returning challenge")
+        blob.string("challenge") ?: ""
+      } else {
         val event = blob.getObject("event")
         val type = event.getString("type")
         if (type == "user_change") {
@@ -140,8 +145,6 @@ fun main(args: Array<String>) {
               profile.getString("image_original")))
         } else LOG.error("no handler for event type $type")
         ""
-      } else {
-        blob.string("challenge") ?: ""
       }
     }
   }
