@@ -125,19 +125,20 @@ fun main(args: Array<String>) {
     }
 
     post("/event") {
-      LOG.info(request.body())  // DEBUG
       val blob = JSON.parseJsonObject(request.body().reader())
       val maybeType = blob.string("type")
 
       if (maybeType == null) {
-        val event = blob.obj("event") ?: throw Exception("missing event")
+        val event = blob.getObject("event")
         val type = event.getString("type")
         if (type == "user_change") {
-          val userObject = event.obj("user")
-          userObject?.let {
-            LOG.info(blob.toJsonString())
-          }
-        }
+          val userObject = event.getObject("user")
+          val userId = userObject.getString("id")
+          val profile = userObject.getObject("profile")
+          slackClient.cacheUser(userId, User(
+              profile.getString("real_name"),
+              profile.getString("image_original")))
+        } else LOG.error("no handler for event type $type")
         ""
       } else {
         blob.string("challenge") ?: ""
@@ -154,7 +155,10 @@ internal val String.isHttp: Boolean
   get() = startsWith("http")
 
 internal fun JsonObject.getString(field: String): String =
-    string(field) ?: throw NoSuchElementException()
+    string(field) ?: throw NoSuchElementException("missing field $field")
+
+internal fun JsonObject.getObject(field: String): JsonObject =
+    obj(field) ?: throw NoSuchElementException("missing field $field")
 
 private data class Config(
     val port: Int,

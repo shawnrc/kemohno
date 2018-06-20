@@ -38,6 +38,7 @@ class SlackClient(
 
   fun cacheUser(userId: String, user: User) {
     if (userId in fixtures) return
+    LOG.info("caching user $userId")
     userCache[userId] = user
   }
 
