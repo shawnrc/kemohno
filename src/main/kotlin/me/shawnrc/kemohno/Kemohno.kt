@@ -123,6 +123,26 @@ fun main(args: Array<String>) {
 
       status(204)
     }
+
+    post("/event") {
+      LOG.info(request.body())  // DEBUG
+      val blob = JSON.parseJsonObject(request.body().reader())
+      val maybeType = blob.string("type")
+
+      if (maybeType == null) {
+        val event = blob.obj("event") ?: throw Exception("missing event")
+        val type = event.getString("type")
+        if (type == "user_change") {
+          val userObject = event.obj("user")
+          userObject?.let {
+            LOG.info(blob.toJsonString())
+          }
+        }
+        ""
+      } else {
+        blob.string("challenge") ?: ""
+      }
+    }
   }
 }
 
