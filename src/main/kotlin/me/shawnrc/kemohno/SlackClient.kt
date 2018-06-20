@@ -7,24 +7,15 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 
-class SlackClient(private val oauthToken: String, private val botToken: String) {
-  private val userCache = mutableMapOf<String, User>()
+class SlackClient(
+    private val oauthToken: String,
+    botToken: String,
+    cacheSeed: String? = null) {
+  private val userCache: MutableMap<String, User> = buildCache(cacheSeed)
+  private val fixtures: Set<String> = userCache.keys.toSet()
   private val apiPostHeaders = mapOf(
       "Content-Type" to APPLICATION_JSON,
       "Authorization" to "Bearer $botToken")
-
-  constructor(oauthToken: String, botToken: String, cacheSeed: String) : this(oauthToken, botToken) {
-    LOG.info("using provided userCache seed at $cacheSeed")
-    val seed = Klaxon().parseJsonObject(File(cacheSeed).reader())
-    for (key in seed.keys) {
-      val blob = seed.obj(key)
-      blob?.let {
-        userCache[key] = User(
-            it.getString("realName"),
-            it.getString("imageUrl"))
-      }
-    }
-  }
 
   fun getUserData(userId: String): User {
     if (userId in userCache) return userCache.getValue(userId)
@@ -37,9 +28,16 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
     val responseBlob = response.jsonObject
 
     val profile = responseBlob.getJSONObject("profile")
-    val realName = profile.getString("real_name")
-    val imageUrl = profile.getString("image_512")
-    return User(realName, imageUrl)
+    val user = User(
+        realName = profile.getString("real_name"),
+        imageUrl = profile.getString("image_512"))
+    cacheUser(userId, user)
+    return user
+  }
+
+  fun cacheUser(userId: String, user: User) {
+    if (userId in fixtures) return
+    userCache[userId] = user
   }
 
   fun sendMessage(
@@ -56,16 +54,15 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
             "channel" to channel,
             "icon_url" to user.imageUrl,
             "username" to user.realName,
-            "response_type" to "in_channel",
-            "token" to botToken),
+            "response_type" to "in_channel"),
         onResponse = errorHandler
     )
   }
 
   private companion object {
-    private val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
+    val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
-    private val errorHandler = { response: Response ->
+    val errorHandler = { response: Response ->
       if (response.statusCode !in 200..299 || !response.jsonObject.getBoolean("ok")) {
         val endpoint = response.endpoint
         LOG.error("call to $endpoint endpoint failed")
@@ -85,8 +82,19 @@ class SlackClient(private val oauthToken: String, private val botToken: String) 
       }
     }
 
-    private val Response.endpoint
+    val Response.endpoint
       get() = File(url).name.split('?')[0]
+
+    fun buildCache(cacheSeed: String?) = cacheSeed?.let {
+      LOG.info("using provided userCache seed at $it")
+      val seed = Klaxon().parseJsonObject(File(cacheSeed).reader())
+      seed.keys.map { key ->
+        val blob = seed.obj(key) ?: throw Exception("failed parsing emoji, key $key not mapped to an object")
+        key to User(
+            blob.getString("realName"),
+            blob.getString("imageUrl"))
+      }.toMap().toMutableMap()
+    } ?: mutableMapOf()
   }
 }
 
