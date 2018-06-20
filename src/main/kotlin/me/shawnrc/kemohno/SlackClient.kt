@@ -6,6 +6,7 @@ import org.json.JSONException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.io.Reader
 
 class SlackClient(
     private val oauthToken: String,
@@ -86,8 +87,11 @@ class SlackClient(
       get() = File(url).name.split('?')[0]
 
     fun buildCache(cacheSeed: String?) = cacheSeed?.let {
-      LOG.info("using provided userCache seed at $it")
-      val seed = Klaxon().parseJsonObject(File(cacheSeed).reader())
+      val reader = if (it.isHttp) getRemoteCacheReader(it) else {
+        LOG.info("using provided userCache seed at $it")
+        File(cacheSeed).reader()
+      }
+      val seed = Klaxon().parseJsonObject(reader)
       seed.keys.map { key ->
         val blob = seed.obj(key) ?: throw Exception("failed parsing emoji, key $key not mapped to an object")
         key to User(
@@ -95,6 +99,16 @@ class SlackClient(
             blob.getString("imageUrl"))
       }.toMap().toMutableMap()
     } ?: mutableMapOf()
+
+    fun getRemoteCacheReader(cacheUrl: String): Reader {
+      LOG.info("fetching userCache from external http source")
+      val response = khttp.get(cacheUrl)
+      if (response.statusCode != 200) {
+        LOG.error("fetch failed, status ${response.statusCode}")
+        throw Exception("failed to get userCache")
+      }
+      return response.text.reader()
+    }
   }
 }
 

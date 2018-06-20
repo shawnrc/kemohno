@@ -11,9 +11,7 @@ class Emojifier(emojiPath: String) {
   private val dispenser: EmojiDispenser
 
   init {
-    val reader = if (emojiPath.startsWith("http")) {
-      getRemoteEmojiReader(emojiPath)
-    } else {
+    val reader = if (emojiPath.isHttp) getRemoteEmojiReader(emojiPath) else {
       LOG.info("using emojifile at $emojiPath")
       File(emojiPath).reader()
     }
@@ -42,7 +40,6 @@ class Emojifier(emojiPath: String) {
       LOG.info("fetching emoji map from external http source")
       val response = khttp.get(emojiPath)
       if (response.statusCode != 200) {
-        LOG.error("failed to fetch emoji map, aborting")
         LOG.error("fetch failed, status ${response.statusCode}")
         throw Exception("failed to get emoji")
       }
