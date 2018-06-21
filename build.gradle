@@ -19,7 +19,7 @@ plugins {
 }
 
 group = 'me.shawnrc'
-version = '0.1.0'
+version = '1.0.0'
 sourceCompatibility = 1.8
 mainClassName = 'me.shawnrc.kemohno.KemohnoKt'
 
@@ -36,8 +36,8 @@ sourceSets {
 
 dependencies {
   compile 'com.sparkjava:spark-kotlin:1.0.0-alpha'
-  compile 'org.slf4j:slf4j-simple:1.7.21'
   compile 'com.github.jkcclemens:khttp:-SNAPSHOT'
+  compile 'ch.qos.logback:logback-classic:1.2.3'
   implementation 'com.beust:klaxon:3.0.1'
 }
 

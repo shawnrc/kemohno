@@ -21,7 +21,7 @@ class SlackClient(
   fun getUserData(userId: String): User {
     if (userId in userCache) return userCache.getValue(userId)
 
-    LOG.debug("hitting getUserData")
+    LOG.debug("hitting users.profile.get")
     val response = khttp.get(
         url = "https://slack.com/api/users.profile.get",
         params = mapOf("token" to oauthToken, "user" to userId))
