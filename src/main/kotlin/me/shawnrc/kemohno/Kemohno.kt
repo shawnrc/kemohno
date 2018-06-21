@@ -24,9 +24,10 @@ fun main(args: Array<String>) {
   val emojifier = Emojifier(args.firstOrNull()
       ?: config.emojiPath
       ?: EMOJI_PATH)
-  val slackClient = (args.getOrNull(index = 1) ?: config.userSeedPath)?.let {
-    SlackClient(config.oauthToken, config.botToken, cacheSeed = it)
-  } ?: SlackClient(config.oauthToken, config.botToken)
+  val slackClient = SlackClient(
+      config.oauthToken,
+      config.botToken,
+      cacheSeed = args.getOrNull(index = 1) ?: config.userSeedPath)
 
   ignite().apply {
     port(config.port)
