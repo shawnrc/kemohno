@@ -5,6 +5,7 @@ import com.beust.klaxon.Klaxon
 import com.beust.klaxon.json
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import spark.Request
 import spark.kotlin.halt
 import spark.kotlin.ignite
 import java.io.File
@@ -30,8 +31,12 @@ fun main(args: Array<String>) {
   ignite().apply {
     port(config.port)
 
+    before {
+      val log: (String) -> Unit = if (request.isHealthcheck) LOG::debug else LOG::info
+      log("${request.requestMethod()} ${request.pathInfo()} ip=${request.ip()}")
+    }
+
     get("/hello") {
-      LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
       "hello"
     }
 
@@ -41,7 +46,6 @@ fun main(args: Array<String>) {
     }
 
     post("/bepis") {
-      LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
       if (request.queryParams("token") != config.verificationToken) {
         LOG.error("request had invalid token")
         halt(403)
@@ -80,8 +84,6 @@ fun main(args: Array<String>) {
     }
 
     post("/action") {
-      LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
-
       val blob = URLDecoder.decode(request.queryParams("payload"), "utf-8")
       val payload = JSON.parseJsonObject(blob.reader())
       if (payload.string("token") != config.verificationToken) {
@@ -125,8 +127,6 @@ fun main(args: Array<String>) {
     }
 
     post("/event") {
-      LOG.info("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
-
       val blob = JSON.parseJsonObject(request.body().reader())
       val maybeType = blob.string("type")
 
@@ -162,6 +162,9 @@ internal fun JsonObject.getString(field: String): String =
 
 internal fun JsonObject.getObject(field: String): JsonObject =
     obj(field) ?: throw NoSuchElementException("missing field $field")
+
+private val Request.isHealthcheck
+  get() = pathInfo() == "/healthcheck"
 
 private data class Config(
     val port: Int,
