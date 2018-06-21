@@ -1,6 +1,5 @@
 package me.shawnrc.kemohno
 
-import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.json
 import org.slf4j.Logger
@@ -13,7 +12,6 @@ import java.net.URLDecoder
 
 const val CONFIG_PATH = "./config.json"
 const val EMOJI_PATH = "./emoji.json"
-const val APPLICATION_JSON = "application/json; charset=utf-8"
 const val MAX_MESSAGE_SIZE = 500000
 
 private val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
@@ -150,19 +148,6 @@ fun main(args: Array<String>) {
     }
   }
 }
-
-internal val String.sanitized: String
-  get() = replace(Regex("""<@\S{9}>"""), "")
-      .replace(Regex("""<([@#])\S{9}\|(\S+)>"""), "$1$2")
-
-internal val String.isHttp: Boolean
-  get() = startsWith("http")
-
-internal fun JsonObject.getString(field: String): String =
-    string(field) ?: throw NoSuchElementException("missing field $field")
-
-internal fun JsonObject.getObject(field: String): JsonObject =
-    obj(field) ?: throw NoSuchElementException("missing field $field")
 
 private val Request.isHealthcheck
   get() = pathInfo() == "/healthcheck"
