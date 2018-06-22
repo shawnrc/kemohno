@@ -36,7 +36,7 @@ sourceSets {
 
 dependencies {
   compile 'com.sparkjava:spark-kotlin:1.0.0-alpha'
-  compile 'com.github.jkcclemens:khttp:-SNAPSHOT'
+  compile 'com.github.jkcclemens:khttp:master-SNAPSHOT'
   compile 'ch.qos.logback:logback-classic:1.2.3'
   implementation 'com.beust:klaxon:3.0.1'
 }
