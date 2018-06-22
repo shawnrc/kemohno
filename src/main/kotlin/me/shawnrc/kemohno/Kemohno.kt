@@ -47,7 +47,7 @@ fun main(args: Array<String>) {
     post("/bepis") {
       if (request.queryParams("token") != config.verificationToken) {
         LOG.error("request had invalid token")
-        halt(403)
+        halt(401)
       }
       val maybeText = request.queryParams("text")
       if (maybeText.isNullOrBlank()) {
@@ -87,7 +87,7 @@ fun main(args: Array<String>) {
       val payload = JSON.parseJsonObject(blob.reader())
       if (payload.string("token") != config.verificationToken) {
         LOG.error("request had invalid token")
-        halt(403)
+        halt(401)
       }
 
       val channel = payload.obj("channel")?.string("id")
