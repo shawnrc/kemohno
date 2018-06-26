@@ -53,7 +53,6 @@ fun main(args: Array<String>) {
       if (maybeText.isNullOrBlank()) {
         LOG.info("bad request, empty or nonexistent text field")
         response.type(APPLICATION_JSON)
-        status(400)
         return@post json { obj(
             "response_type" to "ephemeral",
             "text" to "baka! I can't emojify an empty string! try again with some characters."
