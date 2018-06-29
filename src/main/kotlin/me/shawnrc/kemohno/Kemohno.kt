@@ -12,6 +12,7 @@ import java.net.URLDecoder
 
 const val CONFIG_PATH = "./config.json"
 const val EMOJI_PATH = "./emoji.json"
+const val EMPTY_MESSAGE_ERR = "baka! I can't emojify an empty string! try again with some characters."
 const val MAX_MESSAGE_SIZE = 500000
 
 private val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
@@ -53,10 +54,7 @@ fun main(args: Array<String>) {
       if (maybeText.isNullOrBlank()) {
         LOG.info("bad request, empty or nonexistent text field")
         response.type(APPLICATION_JSON)
-        return@post json { obj(
-            "response_type" to "ephemeral",
-            "text" to "baka! I can't emojify an empty string! try again with some characters."
-        )}.toJsonString()
+        return@post buildEphemeral(EMPTY_MESSAGE_ERR)
       }
 
       val userId = request.queryParams("user_id")
@@ -66,10 +64,8 @@ fun main(args: Array<String>) {
       if (translated.length > MAX_MESSAGE_SIZE) {
         LOG.error("user sent a string way too large")
         response.type(APPLICATION_JSON)
-        return@post json { obj(
-            "response_type" to "ephemeral",
-            "text" to "that string was too large after emojification, try a smaller one."
-        )}.toJsonString()
+        return@post buildEphemeral(
+            message = "that string was too large after emojification, try a smaller one.")
       }
 
       slackClient.sendMessage(
@@ -91,6 +87,12 @@ fun main(args: Array<String>) {
       val channel = payload.obj("channel")?.string("id")
       val userId = payload.obj("user")?.string("id")
       val text = payload.obj("message")?.string("text")
+
+      if (text.isNullOrBlank()) {
+        LOG.info("bad request, empty or nonexistent text field")
+        response.type(APPLICATION_JSON)
+        return@post buildEphemeral(EMPTY_MESSAGE_ERR)
+      }
 
       if (text == null || userId == null || channel == null) {
         LOG.error("bizarre, slack sent a malformed message")
@@ -175,3 +177,8 @@ private fun getConfig(): Config {
       oauthToken = Env["SLACK_OAUTH_TOKEN"],
       verificationToken = Env["VERIFY_TOKEN"])
 }
+
+private fun buildEphemeral(message: String): String = json { obj(
+    "response_type" to "ephemeral",
+    "text" to message
+)}.toJsonString()
