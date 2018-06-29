@@ -90,8 +90,10 @@ fun main(args: Array<String>) {
 
       if (text.isNullOrBlank()) {
         LOG.info("bad request, empty or nonexistent text field")
-        response.type(APPLICATION_JSON)
-        return@post buildEphemeral(EMPTY_MESSAGE_ERR)
+        khttp.async.post(payload.getString("response_url"), json = mapOf(
+            "response_type" to "ephemeral",
+            "text" to "no text in message body"))
+        return@post ""
       }
 
       if (text == null || userId == null || channel == null) {
@@ -99,8 +101,7 @@ fun main(args: Array<String>) {
         LOG.error("body: ${request.body()}")
         khttp.async.post(payload.getString("response_url"), json = mapOf(
             "response_type" to "ephemeral",
-            "text" to "Slack sent a malformed action :( try again?"
-        ))
+            "text" to "Slack sent a malformed action :( try again?"))
         return@post ""
       }
 

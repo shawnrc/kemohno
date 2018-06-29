@@ -26,5 +26,5 @@ run fat jars courtesy of [johnrengelman/shadow](https://github.com/johnrengelman
 ### Building and running a fat-jar (s2i)
 ```shell
 ./gradlew shadowJar
-java -jar build/libs/kemohno-0.0.1-all.jar
+java -jar build/libs/kemohno-1.0.0-all.jar
 ```
