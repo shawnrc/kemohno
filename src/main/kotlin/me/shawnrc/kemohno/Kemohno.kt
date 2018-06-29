@@ -66,7 +66,6 @@ fun main(args: Array<String>) {
       if (translated.length > MAX_MESSAGE_SIZE) {
         LOG.error("user sent a string way too large")
         response.type(APPLICATION_JSON)
-        status(400)
         return@post json { obj(
             "response_type" to "ephemeral",
             "text" to "that string was too large after emojification, try a smaller one."
@@ -100,7 +99,6 @@ fun main(args: Array<String>) {
             "response_type" to "ephemeral",
             "text" to "Slack sent a malformed action :( try again?"
         ))
-        status(400)
         return@post ""
       }
 
