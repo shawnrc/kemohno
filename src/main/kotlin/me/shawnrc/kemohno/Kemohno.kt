@@ -138,7 +138,7 @@ fun main(args: Array<String>) {
           val profile = userObject.getObject("profile")
           slackClient.cacheUser(userId, User(
               profile.getString("real_name"),
-              profile.getString("image_original")))
+              imageUrl = profile.string("image_original") ?: profile.getString("image_512")))
         } else LOG.error("no handler for event type $type")
         ""
       }
