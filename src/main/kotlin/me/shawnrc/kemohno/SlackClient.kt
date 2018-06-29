@@ -45,10 +45,11 @@ class SlackClient(
   fun sendMessage(
       text: String,
       channel: String,
-      user: User) {
+      user: User,
+      targetUrl: String = "https://slack.com/api/chat.postMessage") {
     LOG.debug("hitting chat.postMessage")
     khttp.async.post(
-        url = "https://slack.com/api/chat.postMessage",
+        url = targetUrl,
         headers = apiPostHeaders,
         json = mapOf(
             "text" to text,

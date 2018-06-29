@@ -71,7 +71,8 @@ fun main(args: Array<String>) {
       slackClient.sendMessage(
           text = translated,
           channel = request.queryParams("channel_id"),
-          user = user)
+          user = user,
+          targetUrl = request.queryParams("response_url"))
 
       status(204)
     }
