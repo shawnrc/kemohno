@@ -88,20 +88,20 @@ fun main(args: Array<String>) {
       val userId = payload.obj("user")?.string("id")
       val text = payload.obj("message")?.string("text")
 
-      if (text.isNullOrBlank()) {
-        LOG.info("bad request, empty or nonexistent text field")
-        khttp.async.post(payload.getString("response_url"), json = mapOf(
-            "response_type" to "ephemeral",
-            "text" to "no text in message body"))
-        return@post ""
-      }
-
       if (text == null || userId == null || channel == null) {
         LOG.error("bizarre, slack sent a malformed message")
         LOG.error("body: ${request.body()}")
         khttp.async.post(payload.getString("response_url"), json = mapOf(
             "response_type" to "ephemeral",
             "text" to "Slack sent a malformed action :( try again?"))
+        return@post ""
+      }
+
+      if (text.isBlank()) {
+        LOG.info("bad action request, empty message body")
+        khttp.async.post(payload.getString("response_url"), json = mapOf(
+            "response_type" to "ephemeral",
+            "text" to "that message had no text! did you try emojifying an attachment-only message?"))
         return@post ""
       }
 
