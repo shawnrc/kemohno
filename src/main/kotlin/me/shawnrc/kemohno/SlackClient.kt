@@ -58,7 +58,11 @@ class SlackClient(
         onResponse = onResponse)
   }
 
-  fun sendToChannelAsUser(text: String, channel: String, user: User) = sendMessage(
+  fun sendToChannelAsUser(
+      text: String,
+      channel: String,
+      user: User,
+      fallbackUrl: String? = null) = sendMessage(
       text,
       channel,
       options = mapOf(
@@ -67,22 +71,27 @@ class SlackClient(
           "username" to user.realName,
           "response_type" to "in_channel"),
       onResponse = {
-        if (statusCode == 200
+        if (fallbackUrl != null
+            && statusCode == 200
             && slackSentError
             && jsonObject.getString("error") == "channel_not_found") {
-          sendDirectMessage(
-              text = "Howdy! :face_with_cowboy_hat: I need to be added to a private channel before I can post there" +
-                  ". Just @ me and try emojifying your message again.",
-              userId = user.id)
+          respondEphemeral(CANNOT_SEND_TO_PRIVATE_CHANNEL, fallbackUrl)
         } else {
           errorHandler(this)
         }
       }
   )
 
-  private fun sendDirectMessage(text: String, userId: String) = sendMessage(text, channel = userId)
+  fun respondEphemeral(text: String, responseUrl: String) = khttp.async.post(
+      url = responseUrl,
+      json = mapOf(
+          "response_type" to "ephemeral",
+          "text" to text))
 
   private companion object {
+    const val CANNOT_SEND_TO_PRIVATE_CHANNEL = ":face_with_cowboy_hat: *Howdy!* I can’t send to this channel just " +
+        "yet; invite me and try emojifying again! ╰(✿˙ᗜ˙)੭━☆ﾟ.*･｡ﾟ"
+
     val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
     val errorHandler = { response: Response ->

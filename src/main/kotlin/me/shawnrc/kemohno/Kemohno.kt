@@ -57,10 +57,7 @@ fun main(args: Array<String>) {
         return@post buildEphemeral(EMPTY_MESSAGE_ERR)
       }
 
-      val userId = request.queryParams("user_id")
-      val user = slackClient.getUserData(userId)
       val translated = emojifier.translate(maybeText)
-
       if (translated.length > MAX_MESSAGE_SIZE) {
         LOG.error("user sent a string way too large")
         response.type(APPLICATION_JSON)
@@ -73,10 +70,13 @@ fun main(args: Array<String>) {
         return@post translated
       }
 
+      val userId = request.queryParams("user_id")
+      val user = slackClient.getUserData(userId)
       slackClient.sendToChannelAsUser(
           text = translated,
           channel = channel,
-          user = user)
+          user = user,
+          fallbackUrl = request.queryParams("response_url"))
 
       status(204)
     }
@@ -92,32 +92,30 @@ fun main(args: Array<String>) {
       val channel = payload.obj("channel")?.string("id")
       val userId = payload.obj("user")?.string("id")
       val text = payload.obj("message")?.string("text")
+      val responseUrl = payload.getString("response_url")
 
       if (text == null || userId == null || channel == null) {
         LOG.error("bizarre, slack sent a malformed message")
         LOG.error("body: ${request.body()}")
-        khttp.async.post(payload.getString("response_url"), json = mapOf(
-            "response_type" to "ephemeral",
-            "text" to "Slack sent a malformed action :( try again?"))
+        slackClient.respondEphemeral(
+            text = "Slack sent a malformed action :( try again?",
+            responseUrl = responseUrl)
         return@post ""
       }
 
       if (text.isBlank()) {
         LOG.info("bad action request, empty message body")
-        khttp.async.post(payload.getString("response_url"), json = mapOf(
-            "response_type" to "ephemeral",
-            "text" to "that message had no text! what, did you try emojifying an attachment-only message?"))
+        slackClient.respondEphemeral(
+            text = "that message had no text! what, did you try emojifying an attachment-only message?",
+            responseUrl = responseUrl)
         return@post ""
       }
 
       val translated = emojifier.translate(text.sanitized)
       if (translated.length > MAX_MESSAGE_SIZE) {
         LOG.error("user sent a string way too large")
-        khttp.async.post(payload.getString("response_url"), json = mapOf(
-            "response_type" to "ephemeral",
-            "text" to "bad string"
-        ))
-        halt(400)
+        slackClient.respondEphemeral("bad string", responseUrl)
+        return@post ""
       }
 
       val user = slackClient.getUserData(userId)
