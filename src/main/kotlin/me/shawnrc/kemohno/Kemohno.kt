@@ -123,7 +123,8 @@ fun main(args: Array<String>) {
       slackClient.sendToChannelAsUser(
           text = translated,
           channel = channel,
-          user = user)
+          user = user,
+          fallbackUrl = responseUrl)
 
       status(204)
     }

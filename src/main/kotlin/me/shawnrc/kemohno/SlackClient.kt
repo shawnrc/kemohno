@@ -75,6 +75,7 @@ class SlackClient(
             && statusCode == 200
             && slackSentError
             && jsonObject.getString("error") == "channel_not_found") {
+          LOG.info("could not send to private channel")
           respondEphemeral(CANNOT_SEND_TO_PRIVATE_CHANNEL, fallbackUrl)
         } else {
           errorHandler(this)
@@ -127,7 +128,7 @@ class SlackClient(
       }
       val seed = Klaxon().parseJsonObject(reader)
       seed.keys.map { userId ->
-        val blob = seed.obj(userId) ?: throw Exception("failed parsing emoji, key $userId not mapped to an object")
+        val blob = seed.obj(userId) ?: throw Exception("failed parsing users, key $userId not mapped to an object")
         userId to User(
             userId,
             blob.getString("realName"),
