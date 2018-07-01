@@ -30,26 +30,26 @@ class SlackClient(
 
     val profile = responseBlob.getJSONObject("profile")
     val user = User(
+        id = userId,
         realName = profile.getString("real_name"),
         imageUrl = profile.getString("image_512"))
-    cacheUser(userId, user)
+    cacheUser(user)
     return user
   }
 
-  fun cacheUser(userId: String, user: User) {
-    if (userId in fixtures) return
-    LOG.info("caching user $userId")
-    userCache[userId] = user
+  fun cacheUser(user: User) {
+    if (user.id in fixtures) return
+    LOG.info("caching user ${user.id}")
+    userCache[user.id] = user
   }
 
-  fun sendMessage(
+  fun sendToChannelAsUser(
       text: String,
       channel: String,
-      user: User,
-      targetUrl: String = "https://slack.com/api/chat.postMessage") {
+      user: User) {
     LOG.debug("hitting chat.postMessage")
     khttp.async.post(
-        url = targetUrl,
+        url = "https://slack.com/api/chat.postMessage",
         headers = apiPostHeaders,
         json = mapOf(
             "text" to text,
@@ -58,15 +58,30 @@ class SlackClient(
             "icon_url" to user.imageUrl,
             "username" to user.realName,
             "response_type" to "in_channel"),
-        onResponse = errorHandler
+        onResponse = {
+          if (statusCode == 200
+              && slackSentError
+              && jsonObject.getString("error") == "channel_not_found") {
+            sendDirectMessage(
+                text = "Howdy! :face_with_cowboy_hat: I need to be added to a private channel before I can post there" +
+                    ". Just @ me and try emojifying your message again.",
+                userId = user.id)
+          } else {
+            errorHandler(this)
+          }
+        }
     )
+  }
+
+  fun sendDirectMessage(text: String, userId: String) {
+
   }
 
   private companion object {
     val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
     val errorHandler = { response: Response ->
-      if (response.statusCode !in 200..299 || !response.jsonObject.getBoolean("ok")) {
+      if (response.statusCode !in 200..299 || response.slackSentError) {
         val endpoint = response.endpoint
         LOG.error("call to $endpoint endpoint failed")
         try {
@@ -88,15 +103,19 @@ class SlackClient(
     val Response.endpoint
       get() = File(url).name.split('?')[0]
 
+    val Response.slackSentError
+      get() = !jsonObject.getBoolean("ok")
+
     fun buildCache(cacheSeed: String?) = cacheSeed?.let {
       val reader = if (it.isHttp) getRemoteCacheReader(it) else {
         LOG.info("using provided userCache seed at $it")
         File(cacheSeed).reader()
       }
       val seed = Klaxon().parseJsonObject(reader)
-      seed.keys.map { key ->
-        val blob = seed.obj(key) ?: throw Exception("failed parsing emoji, key $key not mapped to an object")
-        key to User(
+      seed.keys.map { userId ->
+        val blob = seed.obj(userId) ?: throw Exception("failed parsing emoji, key $userId not mapped to an object")
+        userId to User(
+            userId,
             blob.getString("realName"),
             blob.getString("imageUrl"))
       }.toMap().toMutableMap()
@@ -114,4 +133,7 @@ class SlackClient(
   }
 }
 
-data class User(val realName: String, val imageUrl: String)
+data class User(
+    val id: String,
+    val realName: String,
+    val imageUrl: String)

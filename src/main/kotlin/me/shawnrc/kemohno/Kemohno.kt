@@ -68,11 +68,10 @@ fun main(args: Array<String>) {
             message = "that string was too large after emojification, try a smaller one.")
       }
 
-      slackClient.sendMessage(
+      slackClient.sendToChannelAsUser(
           text = translated,
           channel = request.queryParams("channel_id"),
-          user = user,
-          targetUrl = request.queryParams("response_url"))
+          user = user)
 
       status(204)
     }
@@ -102,7 +101,7 @@ fun main(args: Array<String>) {
         LOG.info("bad action request, empty message body")
         khttp.async.post(payload.getString("response_url"), json = mapOf(
             "response_type" to "ephemeral",
-            "text" to "that message had no text! did you try emojifying an attachment-only message?"))
+            "text" to "that message had no text! what, did you try emojifying an attachment-only message?"))
         return@post ""
       }
 
@@ -118,7 +117,7 @@ fun main(args: Array<String>) {
 
       val user = slackClient.getUserData(userId)
       LOG.debug("sending emojified message")
-      slackClient.sendMessage(
+      slackClient.sendToChannelAsUser(
           text = translated,
           channel = channel,
           user = user)
@@ -140,7 +139,8 @@ fun main(args: Array<String>) {
           val userObject = event.getObject("user")
           val userId = userObject.getString("id")
           val profile = userObject.getObject("profile")
-          slackClient.cacheUser(userId, User(
+          slackClient.cacheUser(User(
+              userId,
               profile.getString("real_name"),
               imageUrl = profile.string("image_original") ?: profile.getString("image_512")))
         } else LOG.error("no handler for event type $type")
