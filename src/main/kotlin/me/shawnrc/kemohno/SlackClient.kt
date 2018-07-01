@@ -52,9 +52,9 @@ class SlackClient(
     khttp.async.post(
         url = "https://slack.com/api/chat.postMessage",
         headers = apiPostHeaders,
-        json = mapOf(
+        json = options + mapOf(
             "text" to text,
-            "channel" to channel) + options,
+            "channel" to channel),
         onResponse = onResponse)
   }
 
@@ -80,9 +80,7 @@ class SlackClient(
       }
   )
 
-  private fun sendDirectMessage(text: String, userId: String) {
-    sendMessage(text, channel = userId)
-  }
+  private fun sendDirectMessage(text: String, userId: String) = sendMessage(text, channel = userId)
 
   private companion object {
     val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)

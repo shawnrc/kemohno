@@ -68,9 +68,14 @@ fun main(args: Array<String>) {
             message = "that string was too large after emojification, try a smaller one.")
       }
 
+      val channel = request.queryParams("channel_id")
+      if (channel.isDirectMessage) {
+        return@post translated
+      }
+
       slackClient.sendToChannelAsUser(
           text = translated,
-          channel = request.queryParams("channel_id"),
+          channel = channel,
           user = user)
 
       status(204)
@@ -152,6 +157,9 @@ fun main(args: Array<String>) {
 
 private val Request.isHealthcheck
   get() = pathInfo() == "/healthcheck"
+
+private val String.isDirectMessage
+  get() = startsWith('D')
 
 private data class Config(
     val port: Int,
