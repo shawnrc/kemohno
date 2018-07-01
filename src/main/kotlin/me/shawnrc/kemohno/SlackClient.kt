@@ -43,38 +43,45 @@ class SlackClient(
     userCache[user.id] = user
   }
 
-  fun sendToChannelAsUser(
+  fun sendMessage(
       text: String,
       channel: String,
-      user: User) {
+      options: Map<String, Any> = mapOf(),
+      onResponse: Response.() -> Unit = {}) {
     LOG.debug("hitting chat.postMessage")
     khttp.async.post(
         url = "https://slack.com/api/chat.postMessage",
         headers = apiPostHeaders,
         json = mapOf(
             "text" to text,
-            "as_user" to false,
-            "channel" to channel,
-            "icon_url" to user.imageUrl,
-            "username" to user.realName,
-            "response_type" to "in_channel"),
-        onResponse = {
-          if (statusCode == 200
-              && slackSentError
-              && jsonObject.getString("error") == "channel_not_found") {
-            sendDirectMessage(
-                text = "Howdy! :face_with_cowboy_hat: I need to be added to a private channel before I can post there" +
-                    ". Just @ me and try emojifying your message again.",
-                userId = user.id)
-          } else {
-            errorHandler(this)
-          }
-        }
-    )
+            "channel" to channel) + options,
+        onResponse = onResponse)
   }
 
-  fun sendDirectMessage(text: String, userId: String) {
+  fun sendToChannelAsUser(text: String, channel: String, user: User) = sendMessage(
+      text,
+      channel,
+      options = mapOf(
+          "as_user" to false,
+          "icon_url" to user.imageUrl,
+          "username" to user.realName,
+          "response_type" to "in_channel"),
+      onResponse = {
+        if (statusCode == 200
+            && slackSentError
+            && jsonObject.getString("error") == "channel_not_found") {
+          sendDirectMessage(
+              text = "Howdy! :face_with_cowboy_hat: I need to be added to a private channel before I can post there" +
+                  ". Just @ me and try emojifying your message again.",
+              userId = user.id)
+        } else {
+          errorHandler(this)
+        }
+      }
+  )
 
+  private fun sendDirectMessage(text: String, userId: String) {
+    sendMessage(text, channel = userId)
   }
 
   private companion object {
