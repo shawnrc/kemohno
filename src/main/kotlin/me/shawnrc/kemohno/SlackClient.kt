@@ -90,6 +90,16 @@ class SlackClient(
           "response_type" to "ephemeral",
           "text" to text))
 
+  fun isMpim(channel: String): Boolean {
+    if (!channel.startsWith("G")) return false
+    LOG.debug("checking to see if $this is an mpim")
+    val response = khttp.get(
+        url = "https://slack.com/api/groups.info",
+        params = mapOf("token" to oauthToken, "channel" to channel))
+    errorHandler(response)
+    return response.jsonObject.getJSONObject("group").getBoolean("is_mpim")
+  }
+
   private companion object {
     const val CANNOT_SEND_TO_PRIVATE_CHANNEL = ":face_with_cowboy_hat: *Howdy!* I can’t send to this channel just " +
         "yet; invite me and try emojifying again! ╰(✿˙ᗜ˙)੭━☆ﾟ.*･｡ﾟ"

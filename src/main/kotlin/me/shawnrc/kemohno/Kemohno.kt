@@ -68,8 +68,13 @@ fun main(args: Array<String>) {
 
       val channel = request.queryParams("channel_id")
       LOG.debug("preparing to send to channel $channel")
-      if (channel.isDirectMessage) {
-        return@post translated
+      if (channel.isDirectMessage || slackClient.isMpim(channel)) {
+        LOG.debug("responding directly to slash command")
+        response.type(APPLICATION_JSON)
+        return@post json { obj(
+            "response_type" to "in_channel",
+            "text" to translated
+        )}.toJsonString()
       }
 
       val userId = request.queryParams("user_id")
