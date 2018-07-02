@@ -50,6 +50,7 @@ fun main(args: Array<String>) {
         LOG.error("request had invalid token")
         halt(401)
       }
+
       val maybeText = request.queryParams("text")
       if (maybeText.isNullOrBlank()) {
         LOG.info("bad request, empty or nonexistent text field")
@@ -66,6 +67,7 @@ fun main(args: Array<String>) {
       }
 
       val channel = request.queryParams("channel_id")
+      LOG.debug("preparing to send to channel $channel")
       if (channel.isDirectMessage) {
         return@post translated
       }

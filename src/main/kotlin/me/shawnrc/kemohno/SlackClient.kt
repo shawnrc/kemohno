@@ -43,7 +43,7 @@ class SlackClient(
     userCache[user.id] = user
   }
 
-  fun sendMessage(
+  private fun sendMessage(
       text: String,
       channel: String,
       options: Map<String, Any> = mapOf(),
@@ -75,7 +75,8 @@ class SlackClient(
             && statusCode == 200
             && slackSentError
             && jsonObject.getString("error") == "channel_not_found") {
-          LOG.info("could not send to private channel")
+          LOG.info("could not send to private channel, letting caller know")
+          LOG.debug("failed to send to channel $channel")
           respondEphemeral(CANNOT_SEND_TO_PRIVATE_CHANNEL, fallbackUrl)
         } else {
           errorHandler(this)
