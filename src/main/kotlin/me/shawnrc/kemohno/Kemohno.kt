@@ -125,6 +125,13 @@ fun main(args: Array<String>) {
         return@post ""
       }
 
+      if (channel.isDirectMessage || slackClient.isMpim(channel)) {
+        LOG.debug("action responding to responseUrl")
+        slackClient.respondInChannel(translated, responseUrl)
+        status(204)
+        return@post ""
+      }
+
       val user = slackClient.getUserData(userId)
       LOG.debug("sending emojified message")
       slackClient.sendToChannelAsUser(
