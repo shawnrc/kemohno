@@ -2,7 +2,6 @@ package me.shawnrc.kemohno
 
 import com.beust.klaxon.Klaxon
 import khttp.responses.Response
-import org.json.JSONException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -115,22 +114,30 @@ class SlackClient(
     val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
     val errorHandler = { response: Response ->
-      if (response.statusCode !in 200..299 || response.slackSentError) {
-        val endpoint = response.endpoint
-        LOG.error("call to $endpoint endpoint failed")
-        try {
-          val json = response.jsonObject
-          LOG.error("ok=${json.getBoolean("ok")} error=${json.getString("error")}")
-        } catch (_: JSONException) {
-          when (response.statusCode) {
-            in 400..499 -> LOG.error("client error: ${response.statusCode}")
-            in 500..599 -> LOG.error("slack servers are malfunctioning, aborting")
+      val responseType = response.headers["Content-Type"]
+      LOG.debug("response received for request to ${response.request.url}, " +
+          "content-type: $responseType, status: ${response.statusCode}")
+      if (responseType == APPLICATION_JSON) {
+        val json = response.jsonObject
+        if (!json.getBoolean("ok")) {
+          LOG.error("error from slack API when hitting ${response.endpoint}")
+          LOG.error(json.getString("error"))
+        }
+      } else {
+        LOG.debug("got non-json response")
+        val status = response.statusCode
+        when (status) {
+          in 200..299 -> LOG.debug("success ($status) content: ${response.text} .")
+          in 400..403, in 405..499 -> LOG.error("client error $status: ${response.text}")
+          404 -> {
+            LOG.error("${response.url} not found - maybe malformed or expired?")
+            LOG.debug("dumping: ${response.text}")
+          }
+          in 500..599 -> {
+            LOG.warn("slack server error (${response.statusCode}) ")
+            LOG.debug("dumping: ${response.text}")
           }
         }
-        throw Exception("bad call to $endpoint")
-      }
-      if (response.jsonObject.has("warning")) {
-        LOG.warn("warning from api: ${response.jsonObject["warning"]}")
       }
     }
 
