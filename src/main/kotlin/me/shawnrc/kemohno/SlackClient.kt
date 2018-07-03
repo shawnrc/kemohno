@@ -100,7 +100,7 @@ class SlackClient(
 
   fun isMpim(channel: String): Boolean {
     if (!channel.startsWith("G")) return false
-    LOG.debug("checking to see if $this is an mpim")
+    LOG.debug("checking to see if $channel is an mpim")
     val response = khttp.get(
         url = "https://slack.com/api/groups.info",
         params = mapOf("token" to oauthToken, "channel" to channel))
