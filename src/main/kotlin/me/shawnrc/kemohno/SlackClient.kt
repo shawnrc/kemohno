@@ -119,9 +119,12 @@ class SlackClient(
           "content-type: $responseType, status: ${response.statusCode}")
       if (responseType == APPLICATION_JSON) {
         val json = response.jsonObject
-        if (!json.getBoolean("ok")) {
+        if (response.slackSentError) {
           LOG.error("error from slack API when hitting ${response.endpoint}")
           LOG.error(json.getString("error"))
+        }
+        if (json.has("warning")) {
+          LOG.warn("warning from api: ${response.jsonObject["warning"]}")
         }
       } else {
         LOG.debug("got non-json response")
