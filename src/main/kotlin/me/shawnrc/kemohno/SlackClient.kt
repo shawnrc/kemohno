@@ -131,11 +131,11 @@ class SlackClient(
         val status = response.statusCode
         when (status) {
           in 200..299 -> LOG.debug("success ($status) content: ${response.text} .")
-          in 400..403, in 405..499 -> LOG.error("client error $status: ${response.text}")
           404 -> {
             LOG.error("${response.url} not found - maybe malformed or expired?")
             LOG.debug("dumping: ${response.text}")
           }
+          in 400..499 -> LOG.error("client error $status: ${response.text}")
           in 500..599 -> {
             LOG.warn("slack server error (${response.statusCode}) ")
             LOG.debug("dumping: ${response.text}")
