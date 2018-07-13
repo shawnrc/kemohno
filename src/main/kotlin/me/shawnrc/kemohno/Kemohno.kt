@@ -48,6 +48,7 @@ fun main(args: Array<String>) {
     port(config.port)
 
     before {
+      request.queryMap()
       if (!(request.isHealthcheck || request.pathInfo() == "/hello")) {
         val timestamp: String? = request.headers("X-Slack-Request-Timestamp")
         val signature: String? = request.headers("X-Slack-Signature")
@@ -69,12 +70,11 @@ fun main(args: Array<String>) {
     }
 
     get("/healthcheck") {
-      LOG.debug("method=${request.requestMethod()} path=${request.pathInfo()} ip=${request.ip()}")
       "OK"
     }
 
     post("/bepis") {
-      if (request.queryParams("token") != config.verificationToken) {
+      if (request.queryMap("token").value() != config.verificationToken) {
         LOG.error("request had invalid token")
         LOG.debug("got token ${request.queryParams("token")}")
         halt(401)
