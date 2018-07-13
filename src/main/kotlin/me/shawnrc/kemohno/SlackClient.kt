@@ -42,46 +42,34 @@ class SlackClient(
     userCache[user.id] = user
   }
 
-  private fun sendMessage(
-      text: String,
-      channel: String,
-      options: Map<String, Any> = mapOf(),
-      onResponse: Response.() -> Unit = {}) {
-    LOG.debug("hitting chat.postMessage")
-    khttp.async.post(
-        url = "https://slack.com/api/chat.postMessage",
-        headers = apiPostHeaders,
-        json = options + mapOf(
-            "text" to text,
-            "channel" to channel),
-        onResponse = onResponse)
-  }
-
   fun sendToChannelAsUser(
       text: String,
       channel: String,
       user: User,
-      fallbackUrl: String? = null) = sendMessage(
-      text,
-      channel,
-      options = mapOf(
-          "as_user" to false,
-          "icon_url" to user.imageUrl,
-          "username" to user.realName,
-          "response_type" to "in_channel"),
-      onResponse = {
-        if (fallbackUrl != null
-            && statusCode == 200
-            && slackSentError
-            && jsonObject.getString("error") == "channel_not_found") {
-          LOG.info("could not send to private channel, letting caller know")
-          LOG.debug("failed to send to channel $channel")
-          respondEphemeral(CANNOT_SEND_TO_PRIVATE_CHANNEL, fallbackUrl)
-        } else {
-          errorHandler(this)
-        }
+      fallbackUrl: String? = null) {
+    LOG.debug("hitting chat.postMessage")
+    khttp.async.post(
+        url = "https://slack.com/api/chat.postMessage",
+        headers = apiPostHeaders,
+        json = mapOf(
+            "text" to text,
+            "as_user" to false,
+            "channel" to channel,
+            "icon_url" to user.imageUrl,
+            "username" to user.realName,
+            "response_type" to "in_channel")) {
+      if (fallbackUrl != null
+          && statusCode == 200
+          && slackSentError
+          && jsonObject.getString("error") == "channel_not_found") {
+        LOG.info("could not send to private channel, letting caller know")
+        LOG.debug("failed to send to channel $channel")
+        respondEphemeral(CANNOT_SEND_TO_PRIVATE_CHANNEL, fallbackUrl)
+      } else {
+        errorHandler(this)
       }
-  )
+    }
+  }
 
   fun respondEphemeral(text: String, responseUrl: String) = khttp.async.post(
       url = responseUrl,
@@ -104,7 +92,9 @@ class SlackClient(
         url = "https://slack.com/api/groups.info",
         params = mapOf("token" to oauthToken, "channel" to channel))
     errorHandler(response)
-    return response.jsonObject.getJSONObject("group").getBoolean("is_mpim")
+    return response.jsonObject
+        .getJSONObject("group")
+        .getBoolean("is_mpim")
   }
 
   private companion object {
