@@ -71,18 +71,17 @@ class SlackClient(
     }
   }
 
-  fun respondEphemeral(text: String, responseUrl: String) = khttp.async.post(
-      url = responseUrl,
-      onResponse = errorHandler,
-      json = mapOf(
-          "response_type" to "ephemeral",
-          "text" to text))
+  fun respondEphemeral(text: String, responseUrl: String) =
+      respond(text, responseUrl, responseType = "ephemeral")
 
-  fun respondInChannel(text: String, responseUrl: String) = khttp.async.post(
+  fun respondInChannel(text: String, responseUrl: String) =
+      respond(text, responseUrl, responseType = "in_channel")
+
+  private fun respond(text: String, responseUrl: String, responseType: String) = khttp.async.post(
       url = responseUrl,
       onResponse = errorHandler,
       json = mapOf(
-          "response_type" to "in_channel",
+          "response_type" to responseType,
           "text" to text))
 
   fun isMpim(channel: String): Boolean {
