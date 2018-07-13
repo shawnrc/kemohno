@@ -9,13 +9,19 @@ import spark.kotlin.halt
 import spark.kotlin.ignite
 import java.io.File
 import java.net.URLDecoder
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
+import kotlin.math.abs
 
-const val CONFIG_PATH = "./config.json"
-const val EMOJI_PATH = "./emoji.json"
-const val EMPTY_MESSAGE_ERR = "baka! I can't emojify an empty string! try again with some characters."
-const val MAX_MESSAGE_SIZE = 500000
+private const val CONFIG_PATH = "./config.json"
+private const val EMOJI_PATH = "./emoji.json"
+private const val EMPTY_MESSAGE_ERR = "baka! I can't emojify an empty string! try again with some characters."
+private const val HASH_ALGORITHM = "HmacSHA256"
+private const val SIGNATURE_VERSION = "v0"
+private const val MAX_MESSAGE_SIZE = 500000
+private const val FIVE_MINUTES = 60 * 5
 
-private val LOG: Logger = LoggerFactory.getLogger("me.shawnrc.kemohno.KemohnoKt")
+private val LOG: Logger = LoggerFactory.getLogger("Kemohno")
 private val JSON = Klaxon()
 
 fun main(args: Array<String>) {
@@ -28,12 +34,34 @@ fun main(args: Array<String>) {
       config.botToken,
       cacheSeed = args.getOrNull(index = 1) ?: config.userSeedPath)
 
+  val hasher: Mac = Mac.getInstance(HASH_ALGORITHM).apply {
+    init(SecretKeySpec(config.signingSecret.toByteArray(), HASH_ALGORITHM))
+  }
+
+  fun buildSignature(timestamp: String, body: String): String {
+    val messageBytes = "$SIGNATURE_VERSION:$timestamp:$body".toByteArray()
+    val hashedBytes = hasher.doFinal(messageBytes)
+    return "$SIGNATURE_VERSION=${hashedBytes.toHexString()}"
+  }
+
   ignite().apply {
     port(config.port)
 
     before {
+      if (!(request.isHealthcheck || request.pathInfo() == "/hello")) {
+        val timestamp: String? = request.headers("X-Slack-Request-Timestamp")
+        val signature: String? = request.headers("X-Slack-Signature")
+        val body = request.body()
+        if (timestamp == null
+            || signature == null
+            || timestamp.isNotRecentTimestamp()
+            || signature != buildSignature(timestamp, body)) halt(400)
+      }
+    }
+
+    after {
       val log: (String) -> Unit = if (request.isHealthcheck) LOG::debug else LOG::info
-      log("${request.requestMethod()} ${request.pathInfo()} ip=${request.ip()}")
+      log("${response.status()} ${request.requestMethod()} ${request.pathInfo()} ip=${request.ip()}")
     }
 
     get("/hello") {
@@ -76,6 +104,9 @@ fun main(args: Array<String>) {
             "text" to translated
         )}.toJsonString()
       }
+
+      val test = object { val string: String = "test" }
+      val result = test.string
 
       val userId = request.queryParams("user_id")
       val user = slackClient.getUserData(userId)
@@ -179,6 +210,7 @@ private data class Config(
     val botToken: String,
     val oauthToken: String,
     val verificationToken: String,
+    val signingSecret: String,
     val emojiPath: String? = null,
     val userSeedPath: String? = null)
 
@@ -198,6 +230,7 @@ private fun getConfig(): Config {
       userSeedPath = System.getenv("USER_SEED_PATH"),
       botToken = Env["BOT_TOKEN"],
       oauthToken = Env["SLACK_OAUTH_TOKEN"],
+      signingSecret = Env["SLACK_SIGNING_SECRET"],
       verificationToken = Env["VERIFY_TOKEN"])
 }
 
@@ -205,3 +238,10 @@ private fun buildEphemeral(message: String): String = json { obj(
     "response_type" to "ephemeral",
     "text" to message
 )}.toJsonString()
+
+private fun String.isNotRecentTimestamp(): Boolean =
+  abs(System.currentTimeMillis() / 1000 - toInt()) > FIVE_MINUTES
+
+private fun ByteArray.toHexString() = joinToString(separator = "") {
+  Integer.toHexString(it.toInt() and 0xff).padStart(length = 2, padChar = '0')
+}
