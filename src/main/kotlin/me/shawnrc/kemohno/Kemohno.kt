@@ -234,7 +234,7 @@ private fun buildEphemeral(message: String): String = json { obj(
 )}.toJsonString()
 
 private fun Request.parseBodyParams(): Map<String, String> {
-  return body().split("\r\n").map {
+  return body().split('&').map {
     val (key, value) = it.split('=')
     key to value
   }.toMap()
