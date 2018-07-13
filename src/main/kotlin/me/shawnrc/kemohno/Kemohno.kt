@@ -76,6 +76,7 @@ fun main(args: Array<String>) {
     post("/bepis") {
       if (request.queryParams("token") != config.verificationToken) {
         LOG.error("request had invalid token")
+        LOG.debug("got token ${request.queryParams("token")}")
         halt(401)
       }
 
