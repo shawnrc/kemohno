@@ -48,7 +48,6 @@ fun main(args: Array<String>) {
     port(config.port)
 
     before {
-      request.queryMap()
       if (!(request.isHealthcheck || request.pathInfo() == "/hello")) {
         val timestamp: String? = request.headers("X-Slack-Request-Timestamp")
         val signature: String? = request.headers("X-Slack-Signature")
@@ -75,14 +74,10 @@ fun main(args: Array<String>) {
     }
 
     post("/bepis") {
-      if (request.queryMap("token").value() != config.verificationToken) {
-        LOG.error("request had invalid token")
-        LOG.debug("got token ${request.queryParams("token")}")
-        halt(401)
-      }
+      val postParams = request.parseBodyParams()
 
-      val maybeText = request.queryParams("text")
-      if (maybeText.isNullOrBlank()) {
+      val maybeText = postParams["text"]
+      if (maybeText == null || maybeText.isBlank()) {
         LOG.info("bad request, empty or nonexistent text field")
         response.type(APPLICATION_JSON)
         return@post buildEphemeral(EMPTY_MESSAGE_ERR)
@@ -96,7 +91,7 @@ fun main(args: Array<String>) {
             message = "that string was too large after emojification, try a smaller one.")
       }
 
-      val channel = request.queryParams("channel_id")
+      val channel = postParams.getValue("channel_id")
       LOG.debug("preparing to send to channel $channel")
       if (channel.isDirectMessage || slackClient.isMpim(channel)) {
         LOG.debug("responding directly to slash command")
@@ -107,16 +102,13 @@ fun main(args: Array<String>) {
         )}.toJsonString()
       }
 
-      val test = object { val string: String = "test" }
-      val result = test.string
-
-      val userId = request.queryParams("user_id")
+      val userId = postParams.getValue("user_id")
       val user = slackClient.getUserData(userId)
       slackClient.sendToChannelAsUser(
           text = translated,
           channel = channel,
           user = user,
-          fallbackUrl = request.queryParams("response_url"))
+          fallbackUrl = postParams.getValue("response_url"))
 
       status(204)
     }
@@ -240,6 +232,13 @@ private fun buildEphemeral(message: String): String = json { obj(
     "response_type" to "ephemeral",
     "text" to message
 )}.toJsonString()
+
+private fun Request.parseBodyParams(): Map<String, String> {
+  return body().split("\r\n").map {
+    val (key, value) = it.split('=')
+    key to value
+  }.toMap()
+}
 
 private fun String.isNotRecentTimestamp(): Boolean =
   abs(System.currentTimeMillis() / 1000 - toInt()) > FIVE_MINUTES
