@@ -236,7 +236,7 @@ private fun buildEphemeral(message: String): String = json { obj(
 private fun Request.parseBodyParams(): Map<String, String> {
   return body().split('&').map {
     val (key, value) = it.split('=')
-    key to value
+    key to URLDecoder.decode(value, "utf-8")
   }.toMap()
 }
 
