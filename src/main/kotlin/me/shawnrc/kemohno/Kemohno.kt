@@ -53,6 +53,7 @@ fun main(args: Array<String>) {
         val timestamp: String? = request.headers("X-Slack-Request-Timestamp")
         val signature: String? = request.headers("X-Slack-Signature")
         val body = request.body()
+        LOG.debug("BEFORE body: $body")
         if (timestamp == null
             || signature == null
             || timestamp.isNotRecentTimestamp()
