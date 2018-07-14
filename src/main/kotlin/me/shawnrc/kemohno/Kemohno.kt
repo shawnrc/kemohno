@@ -199,7 +199,6 @@ private data class Config(
     val port: Int,
     val botToken: String,
     val oauthToken: String,
-    val verificationToken: String,
     val signingSecret: String,
     val emojiPath: String? = null,
     val userSeedPath: String? = null)
@@ -220,8 +219,7 @@ private fun getConfig(): Config {
       userSeedPath = System.getenv("USER_SEED_PATH"),
       botToken = Env["BOT_TOKEN"],
       oauthToken = Env["SLACK_OAUTH_TOKEN"],
-      signingSecret = Env["SLACK_SIGNING_SECRET"],
-      verificationToken = Env["VERIFY_TOKEN"])
+      signingSecret = Env["SLACK_SIGNING_SECRET"])
 }
 
 private fun buildEphemeral(message: String): String = json { obj(
