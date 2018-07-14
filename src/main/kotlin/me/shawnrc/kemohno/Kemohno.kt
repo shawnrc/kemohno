@@ -240,5 +240,5 @@ private fun String.isNotRecentTimestamp(): Boolean =
   abs(System.currentTimeMillis() / 1000 - toInt()) > FIVE_MINUTES
 
 private fun ByteArray.toHexString() = joinToString(separator = "") {
-  Integer.toHexString(it.toInt() and 0xff).padStart(length = 2, padChar = '0')
+  Integer.toHexString(it.toInt() and 0xFF).padStart(length = 2, padChar = '0')
 }
