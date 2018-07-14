@@ -56,7 +56,7 @@ fun main(args: Array<String>) {
         if (timestamp == null
             || signature == null
             || timestamp.isNotRecentTimestamp()
-            || signature != buildSignature(timestamp, body)) halt(400)
+            || signature != buildSignature(timestamp, body)) halt(401)
       }
     }
 
@@ -114,12 +114,8 @@ fun main(args: Array<String>) {
     }
 
     post("/action") {
-      val blob = URLDecoder.decode(request.queryParams("payload"), "utf-8")
+      val blob = request.parseBodyParams().getValue("payload")
       val payload = JSON.parseJsonObject(blob.reader())
-      if (payload.string("token") != config.verificationToken) {
-        LOG.error("request had invalid token")
-        halt(401)
-      }
 
       val channel = payload.obj("channel")?.string("id")
       val userId = payload.obj("user")?.string("id")
