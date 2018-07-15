@@ -15,13 +15,14 @@ plugins {
   id 'org.jetbrains.kotlin.jvm' version '1.2.51'
   id 'java'
   id 'application'
-  id 'com.github.johnrengelman.shadow' version '2.0.4'
 }
 
 group = 'me.shawnrc'
 version = '1.1.0'
 sourceCompatibility = 1.8
 mainClassName = 'me.shawnrc.kemohno.KemohnoKt'
+
+apply plugin: 'com.github.johnrengelman.shadow'
 
 repositories {
   mavenCentral()
@@ -43,4 +44,8 @@ dependencies {
 
 task stage {
   dependsOn installDist
+}
+
+wrapper {
+  gradleVersion = '4.8'
 }
