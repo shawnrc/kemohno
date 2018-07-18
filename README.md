@@ -2,7 +2,7 @@ Kemohno
 =======
 _Slack Emojification on the JVM._
 
-Kemohno is a reimplementation of [jimdaguy/emohno](https://github.com/JimDaGuy/emojispell)
+Kemohno is a reimplementation of [jimdaguy/emojispell](https://github.com/JimDaGuy/emojispell)
 in Kotlin, taking advantage of its static typing and DSL-friendliness to make development 
 a bit easier.
 

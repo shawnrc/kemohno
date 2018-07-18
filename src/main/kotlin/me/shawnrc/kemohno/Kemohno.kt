@@ -26,9 +26,7 @@ private val JSON = Klaxon()
 
 fun main(args: Array<String>) {
   val config = getConfig()
-  val emojifier = Emojifier(args.firstOrNull()
-      ?: config.emojiPath
-      ?: EMOJI_PATH)
+  val emojifier = Emojifier(args.firstOrNull() ?: config.emojiPath ?: EMOJI_PATH)
   val slackClient = SlackClient(
       config.oauthToken,
       config.botToken,
@@ -205,7 +203,7 @@ private data class Config(
 
 private object Env {
   operator fun get(name: String): String =
-      System.getenv(name) ?: throw Exception("missing env var: $name")
+      System.getenv(name) ?: throw IllegalStateException("missing env var: $name")
 }
 
 private fun getConfig(): Config {

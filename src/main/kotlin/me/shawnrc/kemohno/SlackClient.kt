@@ -24,9 +24,9 @@ class SlackClient(
     val response = khttp.get(
         url = "https://slack.com/api/users.profile.get",
         params = mapOf("token" to oauthToken, "user" to userId))
-    errorHandler(response)
-    val responseBlob = response.jsonObject
+    responseHandler(response)
 
+    val responseBlob = response.jsonObject
     val profile = responseBlob.getJSONObject("profile")
     val user = User(
         id = userId,
@@ -60,13 +60,13 @@ class SlackClient(
             "response_type" to "in_channel")) {
       if (fallbackUrl != null
           && statusCode == 200
-          && slackSentError
+          && hasSlackError
           && jsonObject.getString("error") == "channel_not_found") {
         LOG.info("could not send to private channel, letting caller know")
         LOG.debug("failed to send to channel $channel")
         respondEphemeral(CANNOT_SEND_TO_PRIVATE_CHANNEL, fallbackUrl)
       } else {
-        errorHandler(this)
+        responseHandler(this)
       }
     }
   }
@@ -79,7 +79,7 @@ class SlackClient(
 
   private fun respond(text: String, responseUrl: String, responseType: String) = khttp.async.post(
       url = responseUrl,
-      onResponse = errorHandler,
+      onResponse = responseHandler,
       json = mapOf(
           "response_type" to responseType,
           "text" to text))
@@ -90,7 +90,7 @@ class SlackClient(
     val response = khttp.get(
         url = "https://slack.com/api/groups.info",
         params = mapOf("token" to oauthToken, "channel" to channel))
-    errorHandler(response)
+    responseHandler(response)
     return response.jsonObject
         .getJSONObject("group")
         .getBoolean("is_mpim")
@@ -102,13 +102,13 @@ class SlackClient(
 
     val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
-    val errorHandler = { response: Response ->
+    val responseHandler = { response: Response ->
       val responseType = response.headers["Content-Type"]
       LOG.debug("response received for request to ${response.request.url}, " +
           "content-type: $responseType, status: ${response.statusCode}")
       if (responseType == APPLICATION_JSON) {
         val json = response.jsonObject
-        if (response.slackSentError) {
+        if (response.hasSlackError) {
           LOG.error("error from slack API when hitting ${response.endpoint}")
           LOG.error(json.getString("error"))
         }
@@ -136,13 +136,13 @@ class SlackClient(
     val Response.endpoint
       get() = File(url).name.split('?')[0]
 
-    val Response.slackSentError
-      get() = !jsonObject.getBoolean("ok")
+    val Response.hasSlackError
+      get() = jsonObject.has("ok") && !jsonObject.getBoolean("ok")
 
-    fun buildCache(cacheSeed: String?) = cacheSeed?.let {
+    fun buildCache(cacheSeed: String?): MutableMap<String, User> = cacheSeed?.let {
       val reader = if (it.isHttp) getRemoteCacheReader(it) else {
         LOG.info("using provided userCache seed at $it")
-        File(cacheSeed).reader()
+        File(it).reader()
       }
       val seed = Klaxon().parseJsonObject(reader)
       seed.keys.map { userId ->
