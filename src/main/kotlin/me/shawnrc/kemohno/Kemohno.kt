@@ -1,5 +1,6 @@
 package me.shawnrc.kemohno
 
+import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.json
 import org.slf4j.Logger
@@ -115,9 +116,10 @@ fun main(args: Array<String>) {
       val blob = request.parseBodyParams().getValue("payload")
       val payload = JSON.parseJsonObject(blob.reader())
 
-      val channel = payload.obj("channel")?.string("id")
-      val userId = payload.obj("user")?.string("id")
-      val text = payload.obj("message")?.string("text")
+      val channel = payload.objString("channel", "id")
+      val userId = payload.objString("user", "id")
+      val text = payload.objString("message", "text")
+      val threadTimestamp = payload.objString("message", "thread_ts")
       val responseUrl = payload.getString("response_url")
 
       if (text == null || userId == null || channel == null) {
@@ -157,7 +159,8 @@ fun main(args: Array<String>) {
           text = translated,
           channel = channel,
           user = user,
-          fallbackUrl = responseUrl)
+          fallbackUrl = responseUrl,
+          threadTimestamp = threadTimestamp)
 
       status(204)
     }
@@ -238,3 +241,5 @@ private fun String.isNotRecentTimestamp(): Boolean =
 private fun ByteArray.toHexString() = joinToString(separator = "") {
   Integer.toHexString(it.toInt() and 0xFF).padStart(length = 2, padChar = '0')
 }
+
+private fun JsonObject.objString(obj: String, string: String): String? = obj(obj)?.string(string)

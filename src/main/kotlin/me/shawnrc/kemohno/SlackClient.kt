@@ -46,18 +46,21 @@ class SlackClient(
       text: String,
       channel: String,
       user: User,
-      fallbackUrl: String? = null) {
+      fallbackUrl: String? = null,
+      threadTimestamp: String? = null) {
     LOG.debug("hitting chat.postMessage")
+    val body = mutableMapOf(
+        "text" to text,
+        "as_user" to false,
+        "channel" to channel,
+        "icon_url" to user.imageUrl,
+        "username" to user.realName,
+        "response_type" to "in_channel")
+    if (threadTimestamp != null) body["thread_ts"] = threadTimestamp
     khttp.async.post(
         url = "https://slack.com/api/chat.postMessage",
         headers = apiPostHeaders,
-        json = mapOf(
-            "text" to text,
-            "as_user" to false,
-            "channel" to channel,
-            "icon_url" to user.imageUrl,
-            "username" to user.realName,
-            "response_type" to "in_channel")) {
+        json = body) {
       if (fallbackUrl != null
           && statusCode == 200
           && hasSlackError
