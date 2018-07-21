@@ -14,6 +14,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import kotlin.math.abs
 
+//region private static final
 private const val CONFIG_PATH = "./config.json"
 private const val EMOJI_PATH = "./emoji.json"
 private const val EMPTY_MESSAGE_ERR = "baka! I can't emojify an empty string! try again with some characters."
@@ -24,6 +25,7 @@ private const val FIVE_MINUTES = 60 * 5
 
 private val LOG: Logger = LoggerFactory.getLogger("Kemohno")
 private val JSON = Klaxon()
+//endregion
 
 fun main(args: Array<String>) {
   val config = getConfig()
@@ -32,16 +34,7 @@ fun main(args: Array<String>) {
       config.oauthToken,
       config.botToken,
       cacheSeed = args.getOrNull(index = 1) ?: config.userSeedPath)
-
-  val hasher: Mac = Mac.getInstance(HASH_ALGORITHM).apply {
-    init(SecretKeySpec(config.signingSecret.toByteArray(), HASH_ALGORITHM))
-  }
-
-  fun buildSignature(timestamp: String, body: String): String {
-    val messageBytes = "$SIGNATURE_VERSION:$timestamp:$body".toByteArray()
-    val hashedBytes = hasher.doFinal(messageBytes)
-    return "$SIGNATURE_VERSION=${hashedBytes.toHexString()}"
-  }
+  val hasher = getHasher(HASH_ALGORITHM, key = config.signingSecret)
 
   ignite().apply {
     port(config.port)
@@ -55,7 +48,7 @@ fun main(args: Array<String>) {
         if (timestamp == null
             || signature == null
             || timestamp.isNotRecentTimestamp()
-            || signature != buildSignature(timestamp, body)) halt(401)
+            || signature != hasher.buildSignature(timestamp, body)) halt(401)
       }
     }
 
@@ -73,9 +66,9 @@ fun main(args: Array<String>) {
     }
 
     post("/bepis") {
-      val postParams = request.parseBodyParams()
+      val requestParams = request.parseBodyParams()
 
-      val maybeText = postParams["text"]
+      val maybeText = requestParams["text"]
       if (maybeText == null || maybeText.isBlank()) {
         LOG.info("bad request, empty or nonexistent text field")
         response.type(APPLICATION_JSON)
@@ -90,7 +83,7 @@ fun main(args: Array<String>) {
             message = "that string was too large after emojification, try a smaller one.")
       }
 
-      val channel = postParams.getValue("channel_id")
+      val channel = requestParams.getValue("channel_id")
       LOG.debug("preparing to send to channel $channel")
       if (channel.isDirectMessage || slackClient.isMpim(channel)) {
         LOG.debug("responding directly to slash command")
@@ -101,25 +94,24 @@ fun main(args: Array<String>) {
         )}.toJsonString()
       }
 
-      val userId = postParams.getValue("user_id")
-      val user = slackClient.getUserData(userId)
+      val user = slackClient.getUserData(requestParams.getValue("user_id"))
       slackClient.sendToChannelAsUser(
           text = translated,
           channel = channel,
           user = user,
-          fallbackUrl = postParams.getValue("response_url"))
+          fallbackUrl = requestParams.getValue("response_url"))
 
       status(204)
     }
 
     post("/action") {
-      val blob = request.parseBodyParams().getValue("payload")
-      val payload = JSON.parseJsonObject(blob.reader())
+      val payload = JSON.parseJsonObject(reader = request.parseBodyParams()
+          .getValue("payload")
+          .reader())
 
       val channel = payload.objString("channel", "id")
       val userId = payload.objString("user", "id")
       val text = payload.objString("message", "text")
-      val threadTimestamp = payload.objString("message", "thread_ts")
       val responseUrl = payload.getString("response_url")
 
       if (text == null || userId == null || channel == null) {
@@ -153,6 +145,9 @@ fun main(args: Array<String>) {
         return@post ""
       }
 
+      val message = payload.obj("message")
+      val threadTimestamp = message?.string("thread_ts")
+          ?.takeUnless { it == message.string("timestamp") }
       val user = slackClient.getUserData(userId)
       LOG.debug("sending emojified message")
       slackClient.sendToChannelAsUser(
@@ -227,6 +222,16 @@ private fun buildEphemeral(message: String): String = json { obj(
     "response_type" to "ephemeral",
     "text" to message
 )}.toJsonString()
+
+private fun getHasher(hashAlgorithm: String, key: String) = Mac.getInstance(hashAlgorithm).apply {
+  init(SecretKeySpec(key.toByteArray(), hashAlgorithm))
+}
+
+private fun Mac.buildSignature(timestamp: String, body: String): String {
+  val messageBytes = "$SIGNATURE_VERSION:$timestamp:$body".toByteArray()
+  val hashedBytes = doFinal(messageBytes)
+  return "$SIGNATURE_VERSION=${hashedBytes.toHexString()}"
+}
 
 private fun Request.parseBodyParams(): Map<String, String> {
   return body().split('&').map {
