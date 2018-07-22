@@ -47,7 +47,7 @@ fun main(args: Array<String>) {
         LOG.debug("BEFORE body: $body")
         if (timestamp == null
             || signature == null
-            || timestamp.isNotRecentTimestamp()
+            || timestamp.isNotRecentTimestamp
             || signature != hasher.buildSignature(timestamp, body)) halt(401)
       }
     }
@@ -147,7 +147,7 @@ fun main(args: Array<String>) {
 
       val message = payload.obj("message")
       val threadTimestamp = message?.string("thread_ts")
-          ?.takeUnless { it == message.string("timestamp") }
+          ?.takeUnless { it == message.string("ts") }
       val user = slackClient.getUserData(userId)
       LOG.debug("sending emojified message")
       slackClient.sendToChannelAsUser(
@@ -191,6 +191,13 @@ private val Request.isHealthcheck
 private val String.isDirectMessage
   get() = startsWith('D')
 
+private val String.sanitized: String
+  get() = replace(Regex("""<@\S{9}>"""), "")
+      .replace(Regex("""<([@#])\S{9}\|(\S+)>"""), "$1$2")
+
+private val String.isNotRecentTimestamp
+    get() = abs(System.currentTimeMillis() / 1000 - toInt()) > FIVE_MINUTES
+
 private data class Config(
     val port: Int,
     val botToken: String,
@@ -218,14 +225,13 @@ private fun getConfig(): Config {
       signingSecret = Env["SLACK_SIGNING_SECRET"])
 }
 
+private fun getHasher(hashAlgorithm: String, key: String) = Mac.getInstance(hashAlgorithm)
+    .apply { init(SecretKeySpec(key.toByteArray(), hashAlgorithm)) }
+
 private fun buildEphemeral(message: String): String = json { obj(
     "response_type" to "ephemeral",
     "text" to message
 )}.toJsonString()
-
-private fun getHasher(hashAlgorithm: String, key: String) = Mac.getInstance(hashAlgorithm).apply {
-  init(SecretKeySpec(key.toByteArray(), hashAlgorithm))
-}
 
 private fun Mac.buildSignature(timestamp: String, body: String): String {
   val messageBytes = "$SIGNATURE_VERSION:$timestamp:$body".toByteArray()
@@ -239,9 +245,6 @@ private fun Request.parseBodyParams(): Map<String, String> {
     key to URLDecoder.decode(value, "utf-8")
   }.toMap()
 }
-
-private fun String.isNotRecentTimestamp(): Boolean =
-  abs(System.currentTimeMillis() / 1000 - toInt()) > FIVE_MINUTES
 
 private fun ByteArray.toHexString() = joinToString(separator = "") {
   Integer.toHexString(it.toInt() and 0xFF).padStart(length = 2, padChar = '0')

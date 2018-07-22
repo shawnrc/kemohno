@@ -107,7 +107,7 @@ class SlackClient(
 
     val responseHandler = { response: Response ->
       val responseType = response.headers["Content-Type"]
-      LOG.debug("response received for request to ${response.request.url}, " +
+      LOG.debug("response received for request to ${response.endpoint}, " +
           "content-type: $responseType, status: ${response.statusCode}")
       if (responseType == APPLICATION_JSON) {
         val json = response.jsonObject
@@ -115,9 +115,7 @@ class SlackClient(
           LOG.error("error from slack API when hitting ${response.endpoint}")
           LOG.error(json.getString("error"))
         }
-        if (json.has("warning")) {
-          LOG.warn("warning from api: ${response.jsonObject["warning"]}")
-        }
+        if (json.has("warning")) LOG.warn("warning from api: ${response.jsonObject["warning"]}")
       } else {
         LOG.debug("got non-json response")
         val status = response.statusCode
@@ -137,7 +135,7 @@ class SlackClient(
     }
 
     val Response.endpoint
-      get() = File(url).name.split('?')[0]
+      get() = File(request.url).name.split('?')[0]
 
     val Response.hasSlackError
       get() = jsonObject.has("ok") && !jsonObject.getBoolean("ok")
