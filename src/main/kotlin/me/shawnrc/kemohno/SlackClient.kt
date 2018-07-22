@@ -116,6 +116,8 @@ class SlackClient(
           LOG.error(json.getString("error"))
         }
         if (json.has("warning")) LOG.warn("warning from api: ${response.jsonObject["warning"]}")
+        LOG.debug("dumping json content:")
+        LOG.debug(json.toString(2))
       } else {
         LOG.debug("got non-json response")
         val status = response.statusCode
