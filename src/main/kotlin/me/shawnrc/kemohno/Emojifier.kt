@@ -65,8 +65,7 @@ class Emojifier(emojiPath: String) {
       return response.text.reader()
     }
 
-    fun String.bemojiAt(start: Int, end: Int): Boolean {
-      return substring(start until min(end, length)) == ":B:"
-    }
+    fun String.bemojiAt(start: Int, end: Int): Boolean =
+        substring(start until min(end, length)) == ":B:"
   }
 }

@@ -50,28 +50,49 @@ class SlackClient(
       threadTimestamp: String? = null) {
     LOG.debug("hitting chat.postMessage")
     val body = mutableMapOf(
-        "text" to text,
-        "as_user" to false,
-        "channel" to channel,
         "icon_url" to user.imageUrl,
-        "username" to user.realName,
-        "response_type" to "in_channel")
+        "username" to user.realName)
     if (threadTimestamp != null) body["thread_ts"] = threadTimestamp
+
+    postMessage(text, channel, optionalParams = body) {
+      if (fallbackUrl != null && statusCode == 200 && hasSlackError) {
+        LOG.debug("failed to send to channel $channel")
+        when (jsonObject.getString("error")) {
+          "channel_not_found" -> {
+            LOG.info("could not send to private channel, letting caller know")
+            respondEphemeral(CANNOT_SEND_TO_PRIVATE_CHANNEL, fallbackUrl)
+          }
+          "restricted_action" -> {
+            LOG.info("user attempted to send to restricted channel, sending direct message")
+            postMessage(
+                text = "Sorry, but your Workspace Owners have limited who can post in that channel.",
+                channel = user.id,
+                onResponse = responseHandler)
+          }
+          else -> responseHandler(this)
+        }
+      } else responseHandler(this)
+    }
+  }
+
+  private fun postMessage(
+      text: String,
+      channel: String,
+      asUser: Boolean = false,
+      responseType: String = "in_channel",
+      optionalParams: Map<String, Any> = mapOf(),
+      onResponse: Response.() -> Unit) {
+    val body: MutableMap<String, Any> = mutableMapOf(
+        "text" to text,
+        "channel" to channel,
+        "as_user" to asUser,
+        "response_type" to responseType)
+    body.putAll(optionalParams)
     khttp.async.post(
         url = "https://slack.com/api/chat.postMessage",
         headers = apiPostHeaders,
-        json = body) {
-      if (fallbackUrl != null
-          && statusCode == 200
-          && hasSlackError
-          && jsonObject.getString("error") == "channel_not_found") {
-        LOG.info("could not send to private channel, letting caller know")
-        LOG.debug("failed to send to channel $channel")
-        respondEphemeral(CANNOT_SEND_TO_PRIVATE_CHANNEL, fallbackUrl)
-      } else {
-        responseHandler(this)
-      }
-    }
+        json = body,
+        onResponse = onResponse)
   }
 
   fun respondEphemeral(text: String, responseUrl: String) =
@@ -105,7 +126,7 @@ class SlackClient(
 
     val LOG: Logger = LoggerFactory.getLogger(SlackClient::class.java)
 
-    val responseHandler = { response: Response ->
+    val responseHandler: (Response) -> Unit = { response ->
       val responseType = response.headers["Content-Type"]
       LOG.debug("response received for request to ${response.endpoint}, " +
           "content-type: $responseType, status: ${response.statusCode}")
