@@ -65,8 +65,12 @@ class SlackClient(
           "restricted_action" -> {
             LOG.info("user attempted to send to restricted channel, sending direct message")
             postMessage(
-                text = "Sorry, but your Workspace Owners have limited who can post in that channel.",
+                text = "I'm sorry, but bots cannot send to that channel. Regardless, here is your emojified message:",
                 channel = user.id,
+                optionalParams = mapOf("attachments" to arrayOf(mapOf(
+                    "fallback" to "Kemohno: Something has gone wrong.",
+                    "text" to text
+                ))),
                 onResponse = responseHandler)
           }
           else -> responseHandler(this)
