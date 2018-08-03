@@ -248,15 +248,15 @@ private fun Mac.buildSignature(timestamp: String, body: String): String {
   return "$SIGNATURE_VERSION=${hashedBytes.toHexString()}"
 }
 
+private fun ByteArray.toHexString() = joinToString(separator = "") {
+  Integer.toHexString(it.toInt() and 0xFF).padStart(length = 2, padChar = '0')
+}
+
 private fun Request.parseBodyParams(): Map<String, String> {
   return body().split('&').map {
     val (key, value) = it.split('=')
     key to URLDecoder.decode(value, "utf-8")
   }.toMap()
-}
-
-private fun ByteArray.toHexString() = joinToString(separator = "") {
-  Integer.toHexString(it.toInt() and 0xFF).padStart(length = 2, padChar = '0')
 }
 
 private fun JsonObject.objString(obj: String, string: String): String? = obj(obj)?.string(string)
