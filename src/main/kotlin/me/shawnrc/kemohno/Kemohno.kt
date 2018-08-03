@@ -13,7 +13,6 @@ import java.net.URLDecoder
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import kotlin.math.abs
-import kotlin.math.sign
 
 //region private static final
 private const val CONFIG_PATH = "./config.json"
@@ -57,6 +56,7 @@ fun main(args: Array<String>) {
             signature: $signature
             computed: ${computed ?: "failed to compute signature"}
           """.trimIndent())
+          halt(401)
         }
       }
     }
