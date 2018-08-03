@@ -13,6 +13,7 @@ import java.net.URLDecoder
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import kotlin.math.abs
+import kotlin.math.sign
 
 //region private static final
 private const val CONFIG_PATH = "./config.json"
@@ -44,11 +45,19 @@ fun main(args: Array<String>) {
         val timestamp: String? = request.headers("X-Slack-Request-Timestamp")
         val signature: String? = request.headers("X-Slack-Signature")
         val body = request.body()
+        val computed = timestamp?.let { hasher.buildSignature(it, body) }
         LOG.debug("BEFORE body: $body")
         if (timestamp == null
             || signature == null
             || timestamp.isNotRecentTimestamp
-            || signature != hasher.buildSignature(timestamp, body)) halt(401)
+            || signature != computed) {
+          LOG.warn("failed to verify request was from slack")
+          LOG.warn("""
+            timestamp: $timestamp (not recent: ${timestamp?.isNotRecentTimestamp})
+            signature: $signature
+            computed: ${computed ?: "failed to compute signature"}
+          """.trimIndent())
+        }
       }
     }
 
