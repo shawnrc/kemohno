@@ -20,7 +20,7 @@ private const val EMOJI_PATH = "./emoji.json"
 private const val EMPTY_MESSAGE_ERR = "baka! I can't emojify an empty string! try again with some characters."
 private const val HASH_ALGORITHM = "HmacSHA256"
 private const val SIGNATURE_VERSION = "v0"
-private const val MAX_MESSAGE_SIZE = 500000
+private const val MAX_MESSAGE_LENGTH = 500000
 private const val FIVE_MINUTES = 60 * 5
 
 private val LOG: Logger = LoggerFactory.getLogger("Kemohno")
@@ -51,11 +51,9 @@ fun main(args: Array<String>) {
             || timestamp.isNotRecentTimestamp
             || signature != computed) {
           LOG.warn("failed to verify request was from slack")
-          LOG.warn("""
-            timestamp: $timestamp (not recent: ${timestamp?.isNotRecentTimestamp})
-            signature: $signature
-            computed: ${computed ?: "failed to compute signature"}
-          """.trimIndent())
+          LOG.warn(("timestamp: $timestamp (not recent: ${timestamp?.isNotRecentTimestamp ?: "unknown"}) | " +
+              "signature: $signature | " +
+              "computed: ${computed ?: "failed to compute signature"}"))
           halt(401)
         }
       }
@@ -81,14 +79,14 @@ fun main(args: Array<String>) {
       if (maybeText == null || maybeText.isBlank()) {
         LOG.info("bad request, empty or nonexistent text field")
         response.type(APPLICATION_JSON)
-        return@post buildEphemeral(EMPTY_MESSAGE_ERR)
+        return@post buildResponse(EMPTY_MESSAGE_ERR)
       }
 
       val translated = emojifier.translate(maybeText)
-      if (translated.length > MAX_MESSAGE_SIZE) {
+      if (translated.length > MAX_MESSAGE_LENGTH) {
         LOG.error("user sent a string way too large")
         response.type(APPLICATION_JSON)
-        return@post buildEphemeral(
+        return@post buildResponse(
             message = "that string was too large after emojification, try a smaller one.")
       }
 
@@ -97,10 +95,7 @@ fun main(args: Array<String>) {
       if (channel.isDirectMessage || slackClient.isMpim(channel)) {
         LOG.debug("responding directly to slash command")
         response.type(APPLICATION_JSON)
-        return@post json { obj(
-            "response_type" to "in_channel",
-            "text" to translated
-        )}.toJsonString()
+        return@post buildResponse(message = translated, responseType = "in_channel")
       }
 
       val user = slackClient.getUserData(requestParams.getValue("user_id"))
@@ -141,8 +136,8 @@ fun main(args: Array<String>) {
       }
 
       val translated = emojifier.translate(text.sanitized)
-      if (translated.length > MAX_MESSAGE_SIZE) {
-        LOG.error("user sent a string way too large")
+      if (translated.length > MAX_MESSAGE_LENGTH) {
+        LOG.warn("user sent a string way too large")
         slackClient.respondEphemeral("bad string", responseUrl)
         return@post ""
       }
@@ -205,7 +200,7 @@ private val String.sanitized: String
       .replace(Regex("""<([@#])\S{9}\|(\S+)>"""), "$1$2")
 
 private val String.isNotRecentTimestamp
-    get() = abs(System.currentTimeMillis() / 1000 - toInt()) > FIVE_MINUTES
+  get() = abs(System.currentTimeMillis() / 1000 - toInt()) > FIVE_MINUTES
 
 private data class Config(
     val port: Int,
@@ -237,8 +232,8 @@ private fun getConfig(): Config {
 private fun getHasher(hashAlgorithm: String, key: String) = Mac.getInstance(hashAlgorithm)
     .apply { init(SecretKeySpec(key.toByteArray(), hashAlgorithm)) }
 
-private fun buildEphemeral(message: String): String = json { obj(
-    "response_type" to "ephemeral",
+private fun buildResponse(message: String, responseType: String = "ephemeral"): String = json { obj(
+    "response_type" to responseType,
     "text" to message
 )}.toJsonString()
 
@@ -253,10 +248,10 @@ private fun ByteArray.toHexString() = joinToString(separator = "") {
 }
 
 private fun Request.parseBodyParams(): Map<String, String> {
-  return body().split('&').map {
+  return body().split('&').associate {
     val (key, value) = it.split('=')
     key to URLDecoder.decode(value, "utf-8")
-  }.toMap()
+  }
 }
 
 private fun JsonObject.objString(obj: String, string: String): String? = obj(obj)?.string(string)

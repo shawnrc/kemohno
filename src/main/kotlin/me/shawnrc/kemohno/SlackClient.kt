@@ -11,7 +11,7 @@ class SlackClient(
     private val oauthToken: String,
     botToken: String,
     cacheSeed: String? = null) {
-  private val userCache: MutableMap<String, User> = buildCache(cacheSeed)
+  private val userCache: MutableMap<String, User> = cacheSeed?.let(::buildCache) ?: mutableMapOf()
   private val fixtures: Set<String> = userCache.keys.toSet()
   private val apiPostHeaders = mapOf(
       "Content-Type" to APPLICATION_JSON,
@@ -167,20 +167,20 @@ class SlackClient(
     val Response.hasSlackError
       get() = jsonObject.has("ok") && !jsonObject.getBoolean("ok")
 
-    fun buildCache(cacheSeed: String?): MutableMap<String, User> = cacheSeed?.let {
-      val reader = if (it.isHttp) getRemoteCacheReader(it) else {
-        LOG.info("using provided userCache seed at $it")
-        File(it).reader()
+    fun buildCache(seed: String): MutableMap<String, User> {
+      val reader = if (seed.isHttp) getRemoteCacheReader(seed) else {
+        LOG.info("using provided userCache seed at $seed")
+        File(seed).reader()
       }
-      val seed = Klaxon().parseJsonObject(reader)
-      seed.keys.map { userId ->
-        val blob = seed.obj(userId) ?: throw Exception("failed parsing users, key $userId not mapped to an object")
+      val parsed = Klaxon().parseJsonObject(reader)
+      return parsed.keys.associateTo(mutableMapOf()) { userId ->
+        val blob = parsed.obj(userId) ?: throw Exception("failed parsing users, key $userId not mapped to an object")
         userId to User(
             userId,
             blob.getString("realName"),
             blob.getString("imageUrl"))
-      }.toMap().toMutableMap()
-    } ?: mutableMapOf()
+      }
+    }
 
     fun getRemoteCacheReader(cacheUrl: String): Reader {
       LOG.info("fetching userCache from external http source")
