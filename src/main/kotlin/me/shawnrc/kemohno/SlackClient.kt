@@ -2,6 +2,8 @@ package me.shawnrc.kemohno
 
 import com.beust.klaxon.Klaxon
 import khttp.responses.Response
+import me.shawnrc.kemohno.SlackClient.Companion.hasSlackError
+import org.json.JSONException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -119,9 +121,10 @@ class SlackClient(
         url = "https://slack.com/api/groups.info",
         params = mapOf("token" to oauthToken, "channel" to channel))
     responseHandler(response)
-    return response.jsonObject
-        .getJSONObject("group")
-        .getBoolean("is_mpim")
+    return response.couldNotFindChannel ||
+        response.jsonObject
+            .getJSONObject("group")
+            .getBoolean("is_mpim")
   }
 
   private companion object {
@@ -140,7 +143,7 @@ class SlackClient(
           LOG.error("error from slack API when hitting ${response.endpoint}")
           LOG.error(json.getString("error"))
         }
-        if (json.has("warning")) LOG.warn("warning from api: ${response.jsonObject["warning"]}")
+        if (json.has("warning")) LOG.warn("warning from api: ${json["warning"]}")
         LOG.debug("dumping json content:")
         LOG.debug(json.toString(2))
       } else {
@@ -166,6 +169,9 @@ class SlackClient(
 
     val Response.hasSlackError
       get() = jsonObject.has("ok") && !jsonObject.getBoolean("ok")
+
+    val Response.couldNotFindChannel
+      get() = hasSlackError && jsonObject.getString("error") == "channel_not_found"
 
     fun buildCache(seed: String): MutableMap<String, User> {
       val reader = if (seed.isHttp) getRemoteCacheReader(seed) else {

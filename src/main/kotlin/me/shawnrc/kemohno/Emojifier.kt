@@ -37,9 +37,9 @@ class Emojifier(emojiPath: String) {
   }
 
   private class EmojiDispenser(private val emojiBlob: JsonObject) {
-    private val emojiMap: Map<Char, Queue<String>> = emojiBlob.keys.map {
+    private val emojiMap: Map<Char, Queue<String>> = emojiBlob.keys.associate {
       it[0] to ArrayDeque(emojiBlob.array<String>(it)?.shuffled())
-    }.toMap()
+    }
 
     operator fun get(char: Char): String {
       val key = char.toString()
