@@ -13,6 +13,7 @@ import java.net.URLDecoder
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import kotlin.math.abs
+import kotlin.text.Charsets.UTF_8
 
 //region private static final
 private const val CONFIG_PATH = "./config.json"
@@ -76,7 +77,7 @@ fun main(args: Array<String>) {
       val requestParams = request.parseBodyParams()
 
       val maybeText = requestParams["text"]
-      if (maybeText == null || maybeText.isBlank()) {
+      if (maybeText.isNullOrBlank()) {
         LOG.info("bad request, empty or nonexistent text field")
         response.type(APPLICATION_JSON)
         return@post buildResponse(EMPTY_MESSAGE_ERR)
@@ -247,11 +248,11 @@ private fun ByteArray.toHexString() = joinToString(separator = "") {
   Integer.toHexString(it.toInt() and 0xFF).padStart(length = 2, padChar = '0')
 }
 
-private fun Request.parseBodyParams(): Map<String, String> {
-  return body().split('&').associate {
-    val (key, value) = it.split('=')
-    key to URLDecoder.decode(value, "utf-8")
-  }
-}
+private fun Request.parseBodyParams(): Map<String, String> = body()
+    .split('&')
+    .associate {
+      val (key, value) = it.split('=')
+      key to URLDecoder.decode(value, UTF_8.name())
+    }
 
 private fun JsonObject.objString(obj: String, string: String): String? = obj(obj)?.string(string)
