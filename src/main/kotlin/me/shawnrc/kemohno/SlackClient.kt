@@ -2,8 +2,6 @@ package me.shawnrc.kemohno
 
 import com.beust.klaxon.Klaxon
 import khttp.responses.Response
-import me.shawnrc.kemohno.SlackClient.Companion.hasSlackError
-import org.json.JSONException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -88,7 +86,7 @@ class SlackClient(
       responseType: String = "in_channel",
       optionalParams: Map<String, Any> = mapOf(),
       onResponse: Response.() -> Unit) {
-    val body: MutableMap<String, Any> = mutableMapOf(
+    val body = mutableMapOf(
         "text" to text,
         "channel" to channel,
         "as_user" to asUser,
@@ -148,8 +146,7 @@ class SlackClient(
         LOG.debug(json.toString(2))
       } else {
         LOG.debug("got non-json response")
-        val status = response.statusCode
-        when (status) {
+        when (val status = response.statusCode) {
           in 200..299 -> LOG.debug("success ($status) content: ${response.text} .")
           404 -> {
             LOG.error("${response.url} not found - maybe malformed or expired?")
@@ -164,7 +161,7 @@ class SlackClient(
       }
     }
 
-    val Response.endpoint
+    val Response.endpoint: String
       get() = File(request.url).name.split('?')[0]
 
     val Response.hasSlackError
