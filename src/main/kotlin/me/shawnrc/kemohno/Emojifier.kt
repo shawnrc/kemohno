@@ -6,8 +6,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.Reader
-import java.util.ArrayDeque
 import java.util.Queue
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.math.min
 
 class Emojifier(emojiPath: String) {
@@ -38,7 +38,7 @@ class Emojifier(emojiPath: String) {
 
   private class EmojiDispenser(private val emojiBlob: JsonObject) {
     private val emojiMap: Map<Char, Queue<String>> = emojiBlob.keys.associate {
-      it[0] to ArrayDeque(emojiBlob.array<String>(it)?.shuffled())
+      it[0] to ConcurrentLinkedQueue(emojiBlob.array<String>(it)?.shuffled())
     }
 
     operator fun get(char: Char): String {
