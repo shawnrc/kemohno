@@ -1,5 +1,5 @@
 buildscript {
-  ext.kotlin_version = '1.3.21'
+  ext.kotlin_version = '1.3.61'
 
   repositories {
     mavenCentral()
@@ -12,13 +12,13 @@ buildscript {
 }
 
 plugins {
-  id 'org.jetbrains.kotlin.jvm' version '1.3.21'
+  id 'org.jetbrains.kotlin.jvm' version '1.3.61'
   id 'java'
   id 'application'
 }
 
 group = 'me.shawnrc'
-version = '1.1.1'
+version = '1.2.0'
 sourceCompatibility = 1.8
 mainClassName = 'me.shawnrc.kemohno.KemohnoKt'
 
@@ -39,8 +39,8 @@ dependencies {
   compile 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
   compile 'com.sparkjava:spark-kotlin:1.0.0-alpha'
   compile 'com.github.jkcclemens:khttp:94ddc37'
-  compile 'ch.qos.logback:logback-classic:1.2.3'
-  implementation 'com.beust:klaxon:3.0.1'
+  compile 'ch.qos.logback:logback-classic:+'
+  implementation 'com.beust:klaxon:+'
 }
 
 task stage {
@@ -48,7 +48,7 @@ task stage {
 }
 
 wrapper {
-  gradleVersion = '4.8'
+  gradleVersion = '4.9'
 }
 
 compileKotlin {
