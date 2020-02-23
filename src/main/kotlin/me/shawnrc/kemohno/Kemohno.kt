@@ -34,8 +34,10 @@ fun main(args: Array<String>) {
   val slackClient = SlackClient(
       config.oauthToken,
       config.botToken,
-      cacheSeed = args.getOrNull(index = 1) ?: config.userSeedPath)
-  val hasher = getHasher(HASH_ALGORITHM, key = config.signingSecret)
+      cacheSeed = args.getOrNull(index = 1) ?: config.userSeedPath,
+      channelBlacklistUri = args.getOrNull(index = 2) ?: config.channelBlacklistPath,
+      userBlacklistUri = args.getOrNull(index = 3) ?: config.userBlacklistPath)
+  val hasher = getHasher(key = config.signingSecret)
 
   ignite().apply {
     port(config.port)
@@ -45,16 +47,16 @@ fun main(args: Array<String>) {
         val timestamp: String? = request.headers("X-Slack-Request-Timestamp")
         val signature: String? = request.headers("X-Slack-Signature")
         val body = request.body()
-        val computed = timestamp?.let { hasher.buildSignature(it, body) }
+        val computedSignature = timestamp?.let { hasher.buildSignature(it, body) }
         LOG.debug("BEFORE body: $body")
         if (timestamp == null
             || signature == null
             || timestamp.isNotRecentTimestamp
-            || signature != computed) {
+            || signature != computedSignature) {
           LOG.warn("failed to verify request was from slack")
           LOG.warn(("timestamp: $timestamp (not recent: ${timestamp?.isNotRecentTimestamp ?: "unknown"}) | " +
               "signature: $signature | " +
-              "computed: ${computed ?: "failed to compute signature"}"))
+              "computed: ${computedSignature ?: "failed to compute signature"}"))
           halt(401)
         }
       }
@@ -209,7 +211,9 @@ private data class Config(
     val oauthToken: String,
     val signingSecret: String,
     val emojiPath: String? = null,
-    val userSeedPath: String? = null)
+    val userSeedPath: String? = null,
+    val channelBlacklistPath: String? = null,
+    val userBlacklistPath: String? = null)
 
 private object Env {
   operator fun get(name: String): String =
@@ -227,11 +231,13 @@ private fun getConfig(): Config {
       userSeedPath = System.getenv("USER_SEED_PATH"),
       botToken = Env["BOT_TOKEN"],
       oauthToken = Env["SLACK_OAUTH_TOKEN"],
-      signingSecret = Env["SLACK_SIGNING_SECRET"])
+      signingSecret = Env["SLACK_SIGNING_SECRET"],
+      channelBlacklistPath = System.getenv("CHANNEL_BLACKLIST"),
+      userBlacklistPath = System.getenv("USER_BLACKLIST"))
 }
 
-private fun getHasher(hashAlgorithm: String, key: String) = Mac.getInstance(hashAlgorithm)
-    .apply { init(SecretKeySpec(key.toByteArray(), hashAlgorithm)) }
+private fun getHasher(key: String) = Mac.getInstance(HASH_ALGORITHM)
+    .apply { init(SecretKeySpec(key.toByteArray(), HASH_ALGORITHM)) }
 
 private fun buildResponse(message: String, responseType: String = "ephemeral"): String = json { obj(
     "response_type" to responseType,

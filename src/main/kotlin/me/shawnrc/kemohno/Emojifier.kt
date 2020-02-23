@@ -38,7 +38,7 @@ class Emojifier(emojiPath: String) {
 
   private class EmojiDispenser(private val emojiBlob: JsonObject) {
     private val emojiMap: Map<Char, Queue<String>> = emojiBlob.keys.associate {
-      it[0] to ConcurrentLinkedQueue(emojiBlob.array<String>(it)?.shuffled())
+      it[0] to ConcurrentLinkedQueue(emojiBlob.getArray<String>(it).shuffled())
     }
 
     operator fun get(char: Char): String {

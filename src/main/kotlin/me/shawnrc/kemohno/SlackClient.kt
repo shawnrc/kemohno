@@ -10,9 +10,13 @@ import java.io.Reader
 class SlackClient(
     private val oauthToken: String,
     botToken: String,
-    cacheSeed: String? = null) {
+    cacheSeed: String? = null,
+    channelBlacklistUri: String? = null,
+    userBlacklistUri: String? = null) {
   private val userCache: MutableMap<String, User> = cacheSeed?.let(::buildCache) ?: mutableMapOf()
   private val fixtures: Set<String> = userCache.keys.toSet()
+  private val channelBlacklist: Set<String> = channelBlacklistUri?.let(::buildIdSet) ?: setOf()
+  private val userBlacklist: Set<String> = userBlacklistUri?.let(::buildIdSet) ?: setOf()
   private val apiPostHeaders = mapOf(
       "Content-Type" to APPLICATION_JSON,
       "Authorization" to "Bearer $botToken")
@@ -47,7 +51,18 @@ class SlackClient(
       channel: String,
       user: User,
       fallbackUrl: String? = null,
-      threadTimestamp: String? = null) {
+      threadTimestamp: String? = null
+  ) {
+    if (user.id in userBlacklist) {
+      LOG.info("user ${user.realName} (${user.id}) blacklisted, will not send message")
+      return
+    }
+
+    if (channel in channelBlacklist) {
+      LOG.info("channel $channel blacklisted, will not send message")
+      return
+    }
+
     LOG.debug("hitting chat.postMessage")
     val body = mutableMapOf(
         "icon_url" to user.imageUrl,
@@ -150,12 +165,12 @@ class SlackClient(
           in 200..299 -> LOG.debug("success ($status) content: ${response.text} .")
           404 -> {
             LOG.error("${response.url} not found - maybe malformed or expired?")
-            LOG.debug("dumping: ${response.text}")
+            LOG.debug("dumping: {}", response.text)
           }
           in 400..499 -> LOG.error("client error $status: ${response.text}")
           in 500..599 -> {
             LOG.warn("slack server error (${response.statusCode}) ")
-            LOG.debug("dumping: ${response.text}")
+            LOG.debug("dumping: {}", response.text)
           }
         }
       }
@@ -171,28 +186,35 @@ class SlackClient(
       get() = hasSlackError && jsonObject.getString("error") == "channel_not_found"
 
     fun buildCache(seed: String): MutableMap<String, User> {
-      val reader = if (seed.isHttp) getRemoteCacheReader(seed) else {
+      val reader = if (seed.isHttp) {
+        LOG.info("fetching userCache from external http source")
+        remoteReader(seed) ?: throw RuntimeException("failed to get userCache")
+      } else {
         LOG.info("using provided userCache seed at $seed")
         File(seed).reader()
       }
       val parsed = Klaxon().parseJsonObject(reader)
-      return parsed.keys.associateTo(mutableMapOf()) { userId ->
-        val blob = parsed.obj(userId) ?: throw Exception("failed parsing users, key $userId not mapped to an object")
-        userId to User(
+      return parsed.keys.associateWithTo(mutableMapOf()) { userId ->
+        val blob = parsed.obj(userId) ?: throw RuntimeException("failed parsing users, key $userId not mapped to an object")
+        User(
             userId,
             blob.getString("realName"),
             blob.getString("imageUrl"))
       }
     }
 
-    fun getRemoteCacheReader(cacheUrl: String): Reader {
-      LOG.info("fetching userCache from external http source")
-      val response = khttp.get(cacheUrl)
-      if (response.statusCode != 200) {
+    fun buildIdSet(uri: String): Set<String> {
+      val reader = remoteReader(uri) ?: throw RuntimeException("failed to fetch id set")
+      val parsed = Klaxon().parseArray<String>(reader) ?: throw RuntimeException("malformed json array at $uri")
+      return parsed.toSet()
+    }
+
+    fun remoteReader(url: String): Reader? {
+      val response = khttp.get(url)
+      return if (response.statusCode != 200) {
         LOG.error("fetch failed, status ${response.statusCode}")
-        throw Exception("failed to get userCache")
-      }
-      return response.text.reader()
+        null
+      } else response.text.reader()
     }
   }
 }
